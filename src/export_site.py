@@ -200,7 +200,11 @@ def compact_tree(ts):
 def export_model(mdl, path, offset=0.0):
     d = mdl.booster_.dump_model()
     trees = [compact_tree(ti["tree_structure"]) for ti in d["tree_info"]]
-    out = dict(features=d["feature_names"], objective=d.get("objective", ""), n_trees=len(trees), trees=trees)
+    names = d["feature_names"]
+    # models are fit on arrays in FEATURES order, so LightGBM names them Column_0..n
+    if len(names) == len(FEATURES) and all(n == f"Column_{i}" for i, n in enumerate(names)):
+        names = FEATURES
+    out = dict(features=names, objective=d.get("objective", ""), n_trees=len(trees), trees=trees)
     with open(path, "w") as fp:
         json.dump(out, fp, separators=(",", ":"))
     return out
@@ -246,8 +250,8 @@ def build_console(cfg, threads):
     tr_on = on["tr"]
     area_rows = tr_on[~tr_on.order_id.duplicated()].aoi_id.value_counts()
     rep = on["rep"].rep
-    sloppy_rep = float(rep[te_off[te_off.sloppy].courier_id.unique()].dropna().median())
-    honest_rep = float(rep[te_off[~te_off.sloppy].courier_id.unique()].dropna().median())
+    sloppy_rep = float(rep.reindex(te_off[te_off.sloppy].courier_id.unique()).dropna().median())
+    honest_rep = float(rep.reindex(te_off[~te_off.sloppy].courier_id.unique()).dropna().median())
     common = 1
     defs = []
     sel = (te_off.aoi_type == common) & (~te_off.sloppy) & te_off.hour.between(9, 11)
