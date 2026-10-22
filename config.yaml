@@ -1,0 +1,73 @@
+# Every parameter of the study. Results rows carry a hash of this file.
+data:
+  raw_cq: data/raw/delivery_cq.csv
+  raw_yt: data/raw/delivery_yt.csv
+  processed_dir: data/processed
+  year: 2022
+  week0_start: "2022-05-01"   # Sunday
+  n_weeks: 26                  # weeks 0-25; Oct 30-31 dropped
+  history_days: 14
+
+splits:
+  warmup: [0, 3]
+  dev: [4, 21]
+  heldout: [22, 25]
+  window_weeks: 4
+
+model:
+  n_estimators: 300
+  learning_rate: 0.05
+  num_leaves: 63
+  min_child_samples: 50
+  subsample: 0.8
+  subsample_freq: 1
+  colsample_bytree: 0.8
+  quantile_alpha: 0.8
+
+features: [hour, minute_of_day, dow, region_id, aoi_id, aoi_type, lng, lat,
+           dist_km, open_workload, courier_hist_mean, area_hist_mean]
+
+degrade:
+  stale:
+    freeze_after_week: 8        # history features frozen as of end of week 8 (2022-06-25)
+  low_quality:
+    sloppy_share: 0.20
+    p_start: 0.10
+    p_slope: 0.80
+    p_span_weeks: 17
+    p_max: 0.90
+    start_week: 4
+    dup_start_week: 10
+    dup_prob: 0.8
+  unseen:
+    share: 0.15
+    start_week: 18
+    frac_low: 0.4
+    frac_high: 0.7
+
+guard:
+  l1:
+    burst_min_packages: 5
+    gps_age_max_min: 30
+    dist_max_km: 30
+    quarantine_weight: 0.05
+  l2:
+    half_life_weeks: 4          # h; null = no recency decay
+    reputation_lambda: 1.0
+    prior_records: 30
+    rep_floor: 0.1
+    courier_cap_mult: 2.0
+    hist_max_age_days: 7
+  l3:
+    conformal: true
+    target_coverage: 0.8
+    defer_hist_age_days: 7
+    defer_gps_age_min: 30
+    defer_min_area_rows: 50
+    defer_width_k: 2.0
+  monitor:
+    miss_low: 0.15
+    miss_high: 0.25
+
+rare_area_share: 0.02
+seeds: [0, 1, 2]

@@ -1,0 +1,53 @@
+"""Shared helpers: config, hashing, time parsing, week assignment."""
+import hashlib
+import os
+import subprocess
+
+import numpy as np
+import pandas as pd
+import yaml
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def load_config(path=None):
+    path = path or os.path.join(ROOT, "config.yaml")
+    with open(path) as f:
+        return yaml.safe_load(f)
+
+
+def config_hash(cfg):
+    blob = yaml.safe_dump(cfg, sort_keys=True).encode()
+    return hashlib.sha256(blob).hexdigest()[:12]
+
+
+def git_sha():
+    env = dict(os.environ, DEVELOPER_DIR="/Library/Developer/CommandLineTools")
+    try:
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
+                                       env=env, stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        return "unknown"
+
+
+def parse_times(s, year):
+    """'MM-DD HH:MM:SS' strings (no year) -> datetime64; unparseable -> NaT."""
+    return pd.to_datetime(str(year) + "-" + s.astype(str), format="%Y-%m-%d %H:%M:%S", errors="coerce")
+
+
+def week_of(ts, week0_start):
+    return ((ts.dt.normalize() - pd.Timestamp(week0_start)).dt.days // 7).astype("Int64")
+
+
+def haversine_km(lng1, lat1, lng2, lat2):
+    lng1, lat1, lng2, lat2 = map(np.radians, (lng1, lat1, lng2, lat2))
+    a = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin((lng2 - lng1) / 2) ** 2
+    return 6371.0 * 2 * np.arcsin(np.sqrt(a))
+
+
+def n_workers():
+    return max(1, (os.cpu_count() or 3) // 3)
+
+
+def n_threads(workers=None):
+    return max(1, (os.cpu_count() or 1) // (workers or n_workers()))
