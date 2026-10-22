@@ -1,0 +1,17 @@
+# Raw and processed data: never commit (145 MB file; LaDe terms)
+data/
+*.csv
+!results/modification_log.csv
+*.parquet
+!results/*.parquet
+# Per-run outputs stay local; only aggregates are committed
+results/runs/
+logs/
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+# OS
+.DS_Store
