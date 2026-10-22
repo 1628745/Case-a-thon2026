@@ -12,7 +12,7 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - [x] 6 Site skeleton on mock data
 - [x] 7 Grid pass 1 (main, controls, dose, shelf_life)
 - [x] 8 Discovery + tuning, DISCOVERY.md
-- [ ] 9 Freeze (tag guard-v1-frozen) + final evaluation
+- [x] 9 Freeze (tag guard-v1-frozen) + final evaluation
 - [ ] 10 Aggregate, export, in-browser model check
 - [ ] 11 Website complete + Pages
 - [ ] 12 Paperwork, presentation kit, final review, DONE
@@ -31,3 +31,4 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - 2026-10-21 23:42 ET, step 8 started: tuning sweep (12 configs h x lambda, k from reported defer-at-k) + 4 atlas runs in background, log logs/tune.log.
 - 2026-10-22 01:02 ET, step 8: sweep 40/40 ok (12 configs + 4 atlas); chosen keep-history, h=4, lambda=0.5, k=4; main+dose Guard-on rerun 16/16 ok; dev scorecard (3 seeds) 6/7 pass: recovery LQ 87% / combined 74%, no harm +0.13%, deferral <= 7.7%, rare <= +1.7%, detection precision 0.93/0.91, beats random removal; FAIL promise quality (reference width 350 vs 336). DISCOVERY.md written.
 - 2026-10-22 01:25 ET, step 9: pre-freeze review subagent: no high/medium findings; fixed low note (strict JSON in results.json). Tagging guard-v1-frozen.
+- 2026-10-22 01:45 ET, step 9: tag guard-v1-frozen pushed (7d87d88); final family 30/30 ok; every final row config_hash e54a0bf568c4, git_sha 7d87d88. Held-out scorecard 5/6: recovery LQ 90% / combined 78% (stale 52%), no harm +0.03%, deferral <= 7.5%, rare <= +2.2%, precision 0.95/0.94; FAIL promise quality; unseen early-scan defect only 7% recovered. GitHub Pages enabled (main /docs).
