@@ -63,7 +63,7 @@ guard:
     target_coverage: 0.8
     defer_hist_age_days: 7
     defer_gps_age_min: 30
-    defer_min_area_rows: 50
+    defer_min_area_rows: 1      # PLAN said 50; areas are tiny (see DECISIONS step 3)
     defer_width_k: 2.0
   monitor:
     miss_low: 0.15

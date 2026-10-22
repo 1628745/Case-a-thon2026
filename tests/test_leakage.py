@@ -73,3 +73,13 @@ def test_frozen_features_do_not_change_after_freeze(feed, cfg):
     b = add_dynamic_features(f2, cfg, freeze_day=fz)
     np.testing.assert_allclose(a.courier_hist_mean, b.courier_hist_mean, equal_nan=True)
     assert a.loc[feed.day == 40, "hist_age_days"].eq(40 - fz).all()
+
+
+def test_test_week_never_in_training_window(cfg):
+    from src.walkforward import window_weeks
+    for cond in ["reference", "stale", "low_quality", "combined", "unseen"]:
+        for w in [1, 2, 4, 8, 16, "all"]:
+            for ctrl in [None, "frozen_model"]:
+                for t in range(4, 26):
+                    wk = window_weeks(dict(condition=cond, window=w, control=ctrl), t, cfg)
+                    assert t not in wk and max(wk) < t and len(wk) > 0
