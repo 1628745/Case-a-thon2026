@@ -11,7 +11,7 @@ import pandas as pd
 
 from src.common import config_hash, git_sha
 from src.model import Timer, fit, predict
-from src.prep import DYNAMIC, FEATURES, add_dynamic_features
+from src.prep import FEATURES, add_dynamic_features
 
 
 def rare_types(base, cfg):
@@ -44,7 +44,11 @@ def build_run_feed(base, spec, cfg):
     if stale_feats:
         freeze_day = (pd.Timestamp(cfg["degrade"]["stale"]["freeze_data_through"]) -
                       pd.Timestamp(cfg["data"]["week0_start"])).days
-    dyn = add_dynamic_features(feed, cfg, freeze_day=freeze_day)
+    if spec["guard"]:
+        from src.guard import guard_feature_store
+        dyn = guard_feature_store(feed, cfg, merged_guard_cfg(cfg, spec), freeze_day)
+    else:
+        dyn = add_dynamic_features(feed, cfg, freeze_day=freeze_day)
     feed = feed.drop(columns=[c for c in dyn.columns if c in feed.columns])
     feed = pd.concat([feed, dyn], axis=1)
     feed["label"] = (feed.delivery_time - feed.accept_time).dt.total_seconds() / 60
@@ -58,13 +62,6 @@ def window_weeks(spec, t, cfg):
     if spec["condition"] in ("stale", "combined") or w == "all":
         return list(range(0, t))
     return list(range(max(0, t - int(w)), t))
-
-
-def weighted_quantile(x, w, q):
-    o = np.argsort(x)
-    x, w = x[o], w[o]
-    c = np.cumsum(w)
-    return float(x[np.searchsorted(c, q * c[-1])]) if len(x) else np.nan
 
 
 def run(spec, base, cfg, threads=1, diag=True):
@@ -115,7 +112,7 @@ def run(spec, base, cfg, threads=1, diag=True):
                    severity=spec.get("severity"), control=spec.get("control"), week=t,
                    week_start=str(tstart.date()), n_test=len(te), n_train_rows=len(tr_used),
                    eff_n_train=float(w.sum() ** 2 / (w ** 2).sum()),
-                   frac_downweighted=float((w / w.max() < 0.5).mean()),
+                   frac_downweighted=float((w < 0.5 * tr_used.get("w_rec", tr_used.w).to_numpy()).mean()),
                    mean_train_age_days=float(np.average(t * 7 - tr_used.day.to_numpy(), weights=w)),
                    sloppy_share_train=float(np.average(tr_used.sloppy.to_numpy(), weights=w)),
                    dup_share_train=float(np.average(tr_used.is_dup.to_numpy(), weights=w)),
