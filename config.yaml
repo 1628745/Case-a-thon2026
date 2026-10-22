@@ -29,7 +29,7 @@ features: [hour, minute_of_day, dow, region_id, aoi_id, aoi_type, lng, lat,
 
 degrade:
   stale:
-    freeze_after_week: 8        # history features frozen as of end of week 8 (2022-06-25)
+    freeze_data_through: "2022-06-25"   # history features stop refreshing; last data day used
   low_quality:
     sloppy_share: 0.20
     p_start: 0.10

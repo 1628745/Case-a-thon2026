@@ -1,0 +1,155 @@
+"""Load, parse, minimally clean, and build features.
+
+python -m src.prep [--city cq|yt]  -> data/processed/<city>.parquet
+
+Static features (from the row itself, known at acceptance) are computed once.
+Dynamic features (open workload, courier/area history means) read the delivery
+feed, so they are recomputed by `add_dynamic_features` on whatever feed a run
+uses (reference or degraded). They only use information available at the
+row's acceptance: other packages' delivery scans that happened before it.
+"""
+import argparse
+import os
+import time
+
+import numpy as np
+import pandas as pd
+
+from src.common import ROOT, haversine_km, load_config, parse_times
+
+STATIC = ["hour", "minute_of_day", "dow", "region_id", "aoi_id", "aoi_type", "lng", "lat", "dist_km"]
+DYNAMIC = ["open_workload", "courier_hist_mean", "area_hist_mean"]
+FEATURES = STATIC + DYNAMIC
+
+
+def load_clean(path, cfg):
+    d = cfg["data"]
+    raw = pd.read_csv(path)
+    at = parse_times(raw["accept_time"], d["year"])
+    dt = parse_times(raw["delivery_time"], d["year"])
+    gt = parse_times(raw["accept_gps_time"], d["year"])
+    df = pd.DataFrame({
+        "order_id": raw["order_id"].astype(np.int64),
+        "courier_id": raw["courier_id"].astype(np.int64),
+        "region_id": raw["region_id"].astype(np.int32),
+        "aoi_id": raw["aoi_id"].astype(np.int32),
+        "aoi_type": raw["aoi_type"].astype(np.int32),
+        "lng": raw["lng"], "lat": raw["lat"],
+        "accept_time": at, "delivery_time": dt,
+        "gps_age_min": (at - gt).dt.total_seconds() / 60,
+        "dist_km": haversine_km(raw["accept_gps_lng"], raw["accept_gps_lat"], raw["lng"], raw["lat"]),
+    })
+    n0 = len(df)
+    df = df[df.accept_time.notna() & df.delivery_time.notna()]
+    df = df[(df.delivery_time - df.accept_time).dt.total_seconds() > 0]
+    start = pd.Timestamp(d["week0_start"])
+    df["day"] = ((df.accept_time.dt.normalize() - start).dt.days).astype(np.int32)
+    df["week"] = (df["day"] // 7).astype(np.int32)
+    df = df[(df.week >= 0) & (df.week < d["n_weeks"])]
+    df["hour"] = df.accept_time.dt.hour.astype(np.int32)
+    df["minute_of_day"] = (df.accept_time.dt.hour * 60 + df.accept_time.dt.minute).astype(np.int32)
+    df["dow"] = df.accept_time.dt.dayofweek.astype(np.int32)
+    df = df.sort_values(["accept_time", "order_id"]).reset_index(drop=True)
+    df["row_id"] = np.arange(len(df), dtype=np.int64)
+    df["ref_duration_min"] = (df.delivery_time - df.accept_time).dt.total_seconds() / 60
+    print(f"rows: raw {n0}, kept {len(df)}")
+    return df
+
+
+def _minutes(ts, start):
+    return ((ts - start).dt.total_seconds() // 60).to_numpy(np.int64)
+
+
+def open_workload(feed, start):
+    """Packages of the same courier accepted earlier the same day and not yet delivered
+    at this row's accept time = #(accept < t) - #(delivery <= t) within courier x accept-day.
+    (Every package is delivered after it is accepted, so delivery <= t implies accept < t.)"""
+    g = feed["courier_id"].to_numpy(np.int64) * 1000 + feed["day"].to_numpy(np.int64)
+    a = _minutes(feed["accept_time"], start)
+    dl = _minutes(feed["delivery_time"], start)
+    big = np.int64(10 ** 7)  # > minutes in the study span
+    ka, kd = g * big + a, g * big + dl
+    sa, sd = np.sort(ka), np.sort(kd)
+    n_acc_before = np.searchsorted(sa, ka, side="left") - np.searchsorted(sa, g * big, side="left")
+    n_del_by = np.searchsorted(sd, ka, side="right") - np.searchsorted(sd, g * big, side="left")
+    return (n_acc_before - n_del_by).astype(np.float32)
+
+
+def history_table(ent, acc_day, del_day, dur, n_days, hist_days):
+    """Mean duration per entity x day D over packages accepted on days D-hist..D-1 and
+    delivered before day D starts. A package contributes to D in [del_day+1, acc_day+hist]."""
+    codes, uniq = pd.factorize(ent)
+    n_e = len(uniq)
+    lo = del_day + 1
+    hi = acc_day + hist_days  # inclusive
+    ok = lo <= hi
+    codes, lo, hi, dur = codes[ok], lo[ok], np.minimum(hi[ok], n_days - 1), dur[ok]
+    keep = lo <= n_days - 1
+    codes, lo, hi, dur = codes[keep], lo[keep], hi[keep], dur[keep]
+    s = np.zeros((n_e, n_days + 1)); c = np.zeros((n_e, n_days + 1))
+    np.add.at(s, (codes, lo), dur); np.add.at(s, (codes, hi + 1), -dur)
+    np.add.at(c, (codes, lo), 1.0); np.add.at(c, (codes, hi + 1), -1.0)
+    s, c = np.cumsum(s, 1)[:, :n_days], np.cumsum(c, 1)[:, :n_days]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        m = np.where(c > 0.5, s / np.maximum(c, 1), np.nan)
+    return pd.Index(uniq), m
+
+
+def add_dynamic_features(feed, cfg, freeze_day=None, rows=None):
+    """Compute DYNAMIC features on `feed` (any feed: reference or degraded). If `rows` is given
+    (a frame with courier_id, aoi_id, day, accept_time), features are looked up for those rows
+    against the feed; otherwise for the feed rows themselves. freeze_day: last data day the
+    feature store saw (stale condition); None = refreshed daily."""
+    d = cfg["data"]
+    start = pd.Timestamp(d["week0_start"])
+    n_days = d["n_weeks"] * 7
+    target = feed if rows is None else rows
+    out = pd.DataFrame(index=target.index)
+    acc_day = feed["day"].to_numpy(np.int64)
+    del_day = ((feed["delivery_time"].dt.normalize() - start).dt.days).to_numpy(np.int64)
+    dur = ((feed["delivery_time"] - feed["accept_time"]).dt.total_seconds() / 60).to_numpy()
+    tday = target["day"].to_numpy(np.int64)
+    lookup_day = tday if freeze_day is None else np.minimum(tday, freeze_day + 1)
+    for name, col in [("courier_hist_mean", "courier_id"), ("area_hist_mean", "aoi_id")]:
+        idx, m = history_table(feed[col].to_numpy(), acc_day, del_day, dur, n_days, d["history_days"])
+        pos = idx.get_indexer(target[col].to_numpy())
+        v = np.full(len(target), np.nan)
+        hit = pos >= 0
+        v[hit] = m[pos[hit], lookup_day[hit]]
+        out[name] = v.astype(np.float32)
+    out["hist_age_days"] = (tday - (lookup_day - 1)).astype(np.float32)
+    if rows is None:
+        out["open_workload"] = open_workload(feed, start)
+    else:
+        # workload of target rows against the feed's accepts and deliveries
+        big = np.int64(10 ** 7)
+        gf = feed["courier_id"].to_numpy(np.int64) * 1000 + acc_day
+        fa = np.sort(gf * big + _minutes(feed["accept_time"], start))
+        fd = np.sort(gf * big + _minutes(feed["delivery_time"], start))
+        base = (target["courier_id"].to_numpy(np.int64) * 1000 + tday) * big
+        kt = base + _minutes(target["accept_time"], start)
+        n_acc = np.searchsorted(fa, kt, "left") - np.searchsorted(fa, base, "left")
+        n_del = np.searchsorted(fd, kt, "right") - np.searchsorted(fd, base, "left")
+        out["open_workload"] = (n_acc - n_del).astype(np.float32)
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--city", default="cq", choices=["cq", "yt"])
+    a = ap.parse_args()
+    cfg = load_config()
+    t = time.time()
+    df = load_clean(os.path.join(ROOT, cfg["data"][f"raw_{a.city}"]), cfg)
+    dyn = add_dynamic_features(df, cfg)
+    df = pd.concat([df, dyn], axis=1)
+    os.makedirs(os.path.join(ROOT, cfg["data"]["processed_dir"]), exist_ok=True)
+    out = os.path.join(ROOT, cfg["data"]["processed_dir"], f"{a.city}.parquet")
+    df.to_parquet(out, index=False)
+    print(f"wrote {out}: {len(df)} rows, {time.time() - t:.1f}s")
+    print(df[FEATURES + ["hist_age_days", "ref_duration_min"]].describe().T[["mean", "min", "max"]].round(2).to_string())
+    print("NaN share", df[DYNAMIC].isna().mean().round(3).to_dict())
+
+
+if __name__ == "__main__":
+    main()
