@@ -30,9 +30,9 @@ def load():
 def stability(w):
     ref = w[(w.family == "main") & (w.condition == "reference") & ~w.guard]
     p = ref.pivot_table(index="week", columns="seed", values="mae_min")
-    return dict(mean_by_seed=p.mean().round(2).to_dict(), max_weekly_seed_spread=float((p.max(1) - p.min(1)).max()),
-                weekly_mae_range=[float(p.mean(1).min()), float(p.mean(1).max())],
-                week_to_week_sd=float(p.mean(1).diff().std()))
+    return dict(mean_by_seed=p.mean().round(2).to_dict(), max_weekly_seed_spread=float((p.max(axis=1) - p.min(axis=1)).max()),
+                weekly_mae_range=[float(p.mean(axis=1).min()), float(p.mean(axis=1).max())],
+                week_to_week_sd=float(p.mean(axis=1).diff().std()))
 
 
 def atlas(w, br):
@@ -52,13 +52,12 @@ def atlas(w, br):
 
 
 def first_departure(w, ch):
-    """First dev week each link departs from reference by more than 3x the reference's own
-    week-to-week noise (seed-0 main runs, Guard off)."""
-    main = w[(w.family == "main") & (w.seed == 0) & ~w.guard]
-    meta = main.drop_duplicates("run_id")[["run_id", "condition"]]
+    """First dev week each link departs from reference by more than 3x the reference's seed-to-seed
+    spread for that metric (median over weeks), using seed-mean values, Guard off, main family."""
+    main = w[(w.family == "main") & ~w.guard]
+    meta = main.drop_duplicates("run_id")[["run_id", "condition", "seed"]]
     c = ch.merge(meta, on="run_id")
     c = c[c.week.between(*DEV)]
-    out = {}
     links = {"data: injected share of training rows": ("w", "injected_share_train"),
              "data: history-feature age (days)": ("w", "feature_age_days"),
              "data: mean training-row age (days)": ("w", "mean_train_age_days"),
@@ -69,23 +68,26 @@ def first_departure(w, ch):
              "decision: MAE (min)": ("w", "mae_min"),
              "decision: promise width (min)": ("w", "promise_width_min"),
              "decision: miss rate": ("w", "miss_rate")}
+    out = {}
     for cond in ["stale", "low_quality", "combined"]:
         res = {}
         for name, (src, col) in links.items():
             df = main if src == "w" else c
             if col not in df:
                 continue
-            x = df[df.condition == cond].set_index("week")[col].sort_index()
-            r = df[df.condition == "reference"].set_index("week")[col].sort_index()
+            piv = df[df.condition.isin([cond, "reference"])].pivot_table(index=["condition", "week"], columns="seed", values=col)
+            mean = piv.mean(axis=1)
+            spread = (piv.max(axis=1) - piv.min(axis=1)).loc["reference"]
+            x, r = mean.loc[cond], mean.loc["reference"]
             d = (x - r).dropna()
-            noise = r.diff().abs().median()
-            thr = 3 * noise if noise and noise > 0 else 1e-9
-            if col in ("probe_shift_p80", "probe_shift_p50"):
-                d = x.dropna()
-                thr = 3 * r.abs().median() if r.abs().median() > 0 else 1.0
+            if col.startswith("probe_shift"):
+                d = x.dropna()  # already a difference vs the reference run
+            thr = max(3 * float(spread.median()), 1e-6)
+            if col == "mae_min":
+                thr = max(thr, 0.005 * float(r.mean()))
             hit = d[d.abs() > thr]
             res[name] = dict(first_week=None if hit.empty else int(hit.index[0]), mean_diff=float(d.mean()),
-                             last_diff=float(d.iloc[-1]) if len(d) else None, threshold=float(thr))
+                             last_diff=float(d.iloc[-1]) if len(d) else None, threshold=thr)
         out[cond] = res
     return out
 

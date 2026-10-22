@@ -40,6 +40,12 @@ def build_run_feed(base, spec, cfg):
     else:
         from src.degrade import build_feed
         feed, modlog = build_feed(base, cond, spec["seed"], cfg, severity=spec.get("severity"))
+    # analysis-only group labels (same courier sets in every condition, so failure-atlas groups line up
+    # with the reference run); never read by the model or the Guard
+    from src.degrade import early_couriers, sloppy_couriers
+    share = cfg["degrade"]["low_quality"]["sloppy_share"] if spec.get("severity") is None else spec["severity"]
+    feed["grp_sloppy"] = feed.courier_id.isin(sloppy_couriers(base, spec["seed"], cfg, share))
+    feed["grp_early"] = feed.courier_id.isin(early_couriers(base, spec["seed"], cfg))
     stale_feats = cond in ("stale", "combined") or spec.get("control") == "frozen_features"
     freeze_day = None
     if stale_feats:
@@ -132,8 +138,7 @@ def run(spec, base, cfg, threads=1, diag=True, keep_models=False):
             row[k] = v
         rows.append(row)
         groups = {"area": np.where(rare_mask, "rare", "common"),
-                  "courier": np.where(te.sloppy.to_numpy(), "sloppy", np.where(te.early.to_numpy(), "early_scan", "other"))
-                  if "early" in te else np.where(te.sloppy.to_numpy(), "sloppy", "other"),
+                  "courier": np.where(te.grp_sloppy.to_numpy(), "sloppy", np.where(te.grp_early.to_numpy(), "early_scan", "other")),
                   "hour": pd.cut(te.hour.to_numpy(), [0, 10, 14, 18, 24], right=False,
                                  labels=["<10", "10-14", "14-18", "18+"]).astype(str),
                   "duration": np.where(y <= 1440, "<=24h", ">24h")}

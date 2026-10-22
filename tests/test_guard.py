@@ -7,12 +7,13 @@ from src.walkforward import merged_guard_cfg
 from src.prep import add_dynamic_features
 from tests.conftest import make_feed
 
-LABELS = ["injected", "sloppy", "is_dup", "early"]
+LABELS = ["injected", "sloppy", "is_dup", "early", "grp_sloppy", "grp_early"]
 
 
 def _setup(cfg, t=12):
     b = make_feed(n_days=120, n_couriers=30, n_aoi=6, per_day=10, seed=2)
     f, _ = build_feed(b, "low_quality", 0, cfg)
+    f["grp_sloppy"], f["grp_early"] = f.sloppy, False
     f = pd.concat([f.drop(columns=["day"]).assign(day=f.day), add_dynamic_features(f, cfg)], axis=1)
     f["label"] = (f.delivery_time - f.accept_time).dt.total_seconds() / 60
     tr = f[f.week.between(t - 4, t - 1)].copy()

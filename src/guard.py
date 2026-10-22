@@ -137,8 +137,9 @@ def apply_guard(tr, te, t, cfg, g, seed, threads):
         wglob = float(width_all.median())
     width_te = p80_te - p50_te
     ref_w = te.aoi_type.map(wmed).fillna(wglob).to_numpy()
-    nulling_on = g["l2"]["hist_max_age_days"] is not None and g["l2"]["hist_max_age_days"] <= l3["defer_hist_age_days"]
-    r_hist = (te.hist_age_days.to_numpy() > l3["defer_hist_age_days"]) & (not nulling_on)
+    dh = l3["defer_hist_age_days"]
+    nulling_on = g["l2"]["hist_max_age_days"] is not None and (dh is None or g["l2"]["hist_max_age_days"] <= dh)
+    r_hist = np.zeros(len(te), bool) if dh is None else (te.hist_age_days.to_numpy() > dh) & (not nulling_on)
     r_gps = te.gps_age_min.to_numpy() > l3["defer_gps_age_min"]
     area_n = te.aoi_id.map(tr.loc[~flags["dup"].to_numpy()].aoi_id.value_counts()).fillna(0).to_numpy()
     r_area = area_n < l3["defer_min_area_rows"]

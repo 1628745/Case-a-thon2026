@@ -109,10 +109,11 @@
     var off = C.offsets[ty] !== undefined ? C.offsets[ty] : C.offset_global;
     var p80 = q80 + off, width = p80 - p50;
     var wref = C.width_med[ty] !== undefined ? C.width_med[ty] : C.width_glob;
-    var nullingOn = maxAge !== null && maxAge <= g.l3.defer_hist_age_days;
+    var dh = g.l3.defer_hist_age_days;
+    var nullingOn = maxAge !== null && (dh === null || maxAge <= dh);
     var rules = [
-      { name: "History-feature age", val: sc.meta.hist_age_days + " d", lim: "> " + g.l3.defer_hist_age_days + " d and cannot be dropped",
-        fired: sc.meta.hist_age_days > g.l3.defer_hist_age_days && !nullingOn, note: nulled ? "stale history dropped: fallback used" : "" },
+      { name: "History-feature age", val: sc.meta.hist_age_days + " d", lim: dh === null ? "never (system alert instead)" : "> " + dh + " d and cannot be dropped",
+        fired: dh !== null && sc.meta.hist_age_days > dh && !nullingOn, note: nulled ? "stale history dropped: fallback used" : "" },
       { name: "GPS fix age", val: f1(sc.meta.gps_age_min) + " min", lim: "> " + g.l3.defer_gps_age_min + " min", fired: sc.meta.gps_age_min > g.l3.defer_gps_age_min },
       { name: "Area support (training rows)", val: f0(sc.meta.area_rows), lim: "< " + g.l3.defer_min_area_rows, fired: sc.meta.area_rows < g.l3.defer_min_area_rows },
       { name: "Interval width (P80 − P50)", val: f0(width) + " min", lim: "> " + g.l3.defer_width_k + " × " + f0(wref) + " min", fired: width > g.l3.defer_width_k * wref }
@@ -162,7 +163,8 @@
       '<span class="k">Promise (conformal P80)</span><span class="big">' + hm(b.p80) + "</span>" +
       '<span class="k">Promise if accepted at ' + clock(hr, 0) + '</span><span>by ' + clock(hr, b.p80) + "</span></div>" +
       '<p class="muted" style="margin-top:10px">Health card</p>' + health(hOn) +
-      (b.nulled ? '<p class="warnc">History features are ' + sc.meta.hist_age_days + " days old: dropped, model uses its fallback.</p>" : "") +
+      (b.nulled ? '<p class="warnc">History features are ' + sc.meta.hist_age_days + " days old: dropped, model uses its fallback.</p>" :
+        (sc.meta.hist_age_days > 7 ? '<p class="warnc">History features are ' + sc.meta.hist_age_days + " days old: kept (stale but still informative); feature-store alert raised for the data steward.</p>" : "")) +
       (b.defer ? '<div class="decision defer">Defer to dispatcher: ' + esc(reasons.join("; ")) + "</div>" : '<div class="decision approve">Approve: all checks pass</div>');
     $("sc-rules").innerHTML = "<table><tr><th class='l'>Check</th><th>Value</th><th class='l'>Defers when</th><th>Result</th></tr>" +
       b.rules.map(function (r) {
@@ -230,7 +232,7 @@
       if ((gsel === "off" && c.guard) || (gsel === "on" && !c.guard)) return;
       traces = traces.concat(bandTraces(c, key, col(c.condition), c.guard ? "dash" : "solid", CNAME[c.condition] + (c.guard ? ", Guard on" : ", Guard off")));
     });
-    var al = D.timeline.alerts.filter(function (a) { return conds.indexOf(a.condition) >= 0 && (gsel === "both" || (gsel === "on") === a.guard); });
+    var al = D.timeline.alerts.filter(function (a) { return (a.kind || "miss_rate") === "miss_rate" && conds.indexOf(a.condition) >= 0 && (gsel === "both" || (gsel === "on") === a.guard); });
     if (al.length && key === "miss_rate") {
       traces.push({ x: al.map(function (a) { return a.week; }), y: al.map(function (a) { return a.guard ? 0.12 : 0.11; }), mode: "markers", name: "monitor alert",
         marker: { symbol: "triangle-up", size: 9, color: al.map(function (a) { return col(a.condition); }) }, type: "scatter",

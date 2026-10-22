@@ -79,7 +79,8 @@ def build_timeline(w, res):
     for a in res.get("alerts_dev", []) + res.get("alerts_final", []):
         if a["run_id"] in meta.index:
             r = meta.loc[a["run_id"]]
-            alerts.append(dict(condition=r.condition, guard=bool(r.guard), seed=int(r.seed), week=a["week"]))
+            alerts.append(dict(condition=r.condition, guard=bool(r.guard), seed=int(r.seed), week=a["week"],
+                               kind=a.get("kind", "miss_rate")))
     return dict(cells=cells, tracks=tracks, markers=MARKERS, alerts=alerts,
                 monitor=res.get("config", {}).get("guard", {}).get("monitor", {}))
 

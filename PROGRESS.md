@@ -11,7 +11,7 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - [x] 5 Guard v0 + diagnostics
 - [x] 6 Site skeleton on mock data
 - [x] 7 Grid pass 1 (main, controls, dose, shelf_life)
-- [ ] 8 Discovery + tuning, DISCOVERY.md
+- [x] 8 Discovery + tuning, DISCOVERY.md
 - [ ] 9 Freeze (tag guard-v1-frozen) + final evaluation
 - [ ] 10 Aggregate, export, in-browser model check
 - [ ] 11 Website complete + Pages
@@ -29,3 +29,4 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - 2026-10-21 23:00 ET, step 7 started: grid pass 1 (46 unique runs) in background, log logs/grid1.log.
 - 2026-10-21 23:41 ET, step 7: grid pass 1 finished, 46/46 runs ok (0 failures, 828 weekly retrains, 37.6 min); aggregate ok. Default Guard on dev weeks: recovery low_quality 81%, combined -37%; no harm +0.3%; deferral 18%; detection precision 0.93/0.91; beats random removal (192.6 vs 198.9).
 - 2026-10-21 23:42 ET, step 8 started: tuning sweep (12 configs h x lambda, k from reported defer-at-k) + 4 atlas runs in background, log logs/tune.log.
+- 2026-10-22 01:02 ET, step 8: sweep 40/40 ok (12 configs + 4 atlas); chosen keep-history, h=4, lambda=0.5, k=4; main+dose Guard-on rerun 16/16 ok; dev scorecard (3 seeds) 6/7 pass: recovery LQ 87% / combined 74%, no harm +0.13%, deferral <= 7.7%, rare <= +1.7%, detection precision 0.93/0.91, beats random removal; FAIL promise quality (reference width 350 vs 336). DISCOVERY.md written.

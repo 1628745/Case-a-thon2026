@@ -52,19 +52,19 @@ guard:
     dist_max_km: 30
     quarantine_weight: 0.05
   l2:
-    half_life_weeks: 4          # h; null = no recency decay
-    reputation_lambda: 1.0
+    half_life_weeks: 4          # h; null = no recency decay (tuned: 4)
+    reputation_lambda: 0.5      # tuned (PLAN default 1.0)
     prior_records: 30
     rep_floor: 0.1
     courier_cap_mult: 2.0
-    hist_max_age_days: 7
+    hist_max_age_days: null     # tuned: keep stale history (PLAN default 7 = drop)
   l3:
     conformal: true
     target_coverage: 0.8
-    defer_hist_age_days: 7
+    defer_hist_age_days: null   # tuned: no per-package deferral on age; system alert instead
     defer_gps_age_min: 30
     defer_min_area_rows: 1      # PLAN said 50; areas are tiny (see DECISIONS step 3)
-    defer_width_k: 2.0
+    defer_width_k: 4.0          # tuned: smallest tested k within the 10% deferral budget
   monitor:
     miss_low: 0.15
     miss_high: 0.25

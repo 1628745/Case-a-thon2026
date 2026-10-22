@@ -161,13 +161,19 @@ def summarize_block(main_w, det, controls_w=None, block="dev"):
     return out
 
 
-def monitor_alerts(w, lo, hi):
+def monitor_alerts(w, lo, hi, max_feature_age=7):
+    """Miss-rate alert: two consecutive weeks outside [lo, hi]. Feature-store alert (system level, Guard on):
+    mean history-feature age of the week's packages above max_feature_age days."""
     out = []
     for (rid,), g in w.sort_values("week").groupby(["run_id"]):
         bad = ((g.miss_rate < lo) | (g.miss_rate > hi)).to_numpy()
         for i in range(1, len(bad)):
             if bad[i] and bad[i - 1]:
-                out.append(dict(run_id=rid, week=int(g.week.iloc[i])))
+                out.append(dict(run_id=rid, week=int(g.week.iloc[i]), kind="miss_rate"))
+        if g.guard.iloc[0]:
+            for wk, age in zip(g.week, g.feature_age_days):
+                if age > max_feature_age:
+                    out.append(dict(run_id=rid, week=int(wk), kind="feature_store"))
     return out
 
 
