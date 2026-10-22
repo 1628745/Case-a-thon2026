@@ -36,6 +36,7 @@ def build_run_feed(base, spec, cfg):
         feed["is_dup"] = False
         feed["injected"] = False
         feed["sloppy"] = False
+        feed["early"] = False
     else:
         from src.degrade import build_feed
         feed, modlog = build_feed(base, cond, spec["seed"], cfg, severity=spec.get("severity"))
@@ -69,7 +70,7 @@ def run(spec, base, cfg, threads=1, diag=True, keep_models=False):
     feed, modlog = build_run_feed(base, spec, cfg)
     rare = rare_types(base, cfg)
     rng = np.random.default_rng(spec["seed"] + 1000)
-    rows, det, imp, probes, chain = [], [], [], [], []
+    rows, det, imp, probes, chain, brk = [], [], [], [], [], []
     frozen = None
     models = {}
     chash, sha = config_hash(cfg), git_sha()
@@ -130,6 +131,17 @@ def run(spec, base, cfg, threads=1, diag=True, keep_models=False):
         for k, v in res.get("weekly_extra", {}).items():
             row[k] = v
         rows.append(row)
+        groups = {"area": np.where(rare_mask, "rare", "common"),
+                  "courier": np.where(te.sloppy.to_numpy(), "sloppy", np.where(te.early.to_numpy(), "early_scan", "other"))
+                  if "early" in te else np.where(te.sloppy.to_numpy(), "sloppy", "other"),
+                  "hour": pd.cut(te.hour.to_numpy(), [0, 10, 14, 18, 24], right=False,
+                                 labels=["<10", "10-14", "14-18", "18+"]).astype(str),
+                  "duration": np.where(y <= 1440, "<=24h", ">24h")}
+        for kind, gv in groups.items():
+            for gname in np.unique(gv):
+                m = gv == gname
+                brk.append(dict(run_id=spec["run_id"], week=t, kind=kind, group=str(gname), n=int(m.sum()),
+                                mae=float(err[m].mean()), miss=float((y[m] > p80[m]).mean()), defer=float(defer[m].mean())))
         if spec["guard"] and "flag" in res:
             fl, inj = res["flag"], tr_used.injected.to_numpy()
             det.append(dict(run_id=spec["run_id"], week=t, tp=int((fl & inj).sum()), fp=int((fl & ~inj).sum()),
@@ -141,7 +153,8 @@ def run(spec, base, cfg, threads=1, diag=True, keep_models=False):
             d_imp, d_probe, d_chain = diagnostics(spec, t, res, tr_used, te, Xte, cfg, base)
             imp += d_imp; probes += d_probe; chain.append(d_chain)
     out = {"weekly": pd.DataFrame(rows), "detector": pd.DataFrame(det), "importance": pd.DataFrame(imp),
-           "probe": pd.DataFrame(probes), "chain": pd.DataFrame(chain), "modlog": pd.DataFrame(modlog)}
+           "probe": pd.DataFrame(probes), "chain": pd.DataFrame(chain), "modlog": pd.DataFrame(modlog),
+           "breakdown": pd.DataFrame(brk)}
     if keep_models:
         out["models"] = models
     return out

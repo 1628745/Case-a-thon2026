@@ -10,7 +10,7 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - [x] 4 Injectors + modification log
 - [x] 5 Guard v0 + diagnostics
 - [x] 6 Site skeleton on mock data
-- [ ] 7 Grid pass 1 (main, controls, dose, shelf_life)
+- [x] 7 Grid pass 1 (main, controls, dose, shelf_life)
 - [ ] 8 Discovery + tuning, DISCOVERY.md
 - [ ] 9 Freeze (tag guard-v1-frozen) + final evaluation
 - [ ] 10 Aggregate, export, in-browser model check
@@ -27,3 +27,5 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - 2026-10-21 22:58 ET, step 5: guard.py + diagnose.py; Guard on/off end to end on YT (weeks 14-15) and CQ (weeks 12/16/20, reference/low_quality/combined); 19 tests pass.
 - 2026-10-21 23:12 ET, step 6: site skeleton (8 sections, vendored plotly 2.35.2, trees.js evaluator) on mock data from `export_site --mock`; served locally, all 15 charts and tables render, no console errors.
 - 2026-10-21 23:00 ET, step 7 started: grid pass 1 (46 unique runs) in background, log logs/grid1.log.
+- 2026-10-21 23:41 ET, step 7: grid pass 1 finished, 46/46 runs ok (0 failures, 828 weekly retrains, 37.6 min); aggregate ok. Default Guard on dev weeks: recovery low_quality 81%, combined -37%; no harm +0.3%; deferral 18%; detection precision 0.93/0.91; beats random removal (192.6 vs 198.9).
+- 2026-10-21 23:42 ET, step 8 started: tuning sweep (12 configs h x lambda, k from reported defer-at-k) + 4 atlas runs in background, log logs/tune.log.

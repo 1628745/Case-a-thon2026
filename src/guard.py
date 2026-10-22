@@ -144,7 +144,9 @@ def apply_guard(tr, te, t, cfg, g, seed, threads):
     r_area = area_n < l3["defer_min_area_rows"]
     r_width = width_te > l3["defer_width_k"] * np.maximum(ref_w, 1e-6)
     defer = r_hist | r_gps | r_area | r_width
-    extra = dict(defer_hist=float(r_hist.mean()), defer_gps=float(r_gps.mean()), defer_area=float(r_area.mean()),
+    other = r_hist | r_gps | r_area
+    extra = {f"defer_k{kk}": float((other | (width_te > kk * np.maximum(ref_w, 1e-6))).mean()) for kk in (1.5, 2.0, 3.0, 4.0)}
+    extra.update(defer_hist=float(r_hist.mean()), defer_gps=float(r_gps.mean()), defer_area=float(r_area.mean()),
                  defer_width=float(r_width.mean()), frac_flagged_train=float(fany.mean()),
                  flag_burst=float(flags.burst.mean()), flag_dup=float(flags.dup.mean()), flag_far=float(flags.far.mean()),
                  mean_rep=float(rep.rep.mean()), frac_rep_below_half=float((rep.rep < 0.5).mean()))

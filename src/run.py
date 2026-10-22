@@ -29,6 +29,7 @@ def parse_spec(r):
     s["weeks"] = list(range(lo, hi + 1))
     gc = r.get("guard_cfg", "")
     s["guard_cfg"] = json.loads(gc) if isinstance(gc, str) and gc.strip() else None
+    s["tag"] = r.get("tag", "") or ""
     return s
 
 

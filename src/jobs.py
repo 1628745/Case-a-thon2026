@@ -19,12 +19,14 @@ CONDS = ["reference", "stale", "low_quality", "combined"]
 
 def spec_id(s):
     key = {k: s.get(k) for k in ["condition", "guard", "seed", "window", "severity", "control", "weeks", "guard_cfg"]}
+    if s.get("tag"):
+        key["tag"] = s["tag"]
     return hashlib.sha1(json.dumps(key, sort_keys=True).encode()).hexdigest()[:10]
 
 
-def job(family, condition, guard, seed, weeks, window=4, severity=None, control=None, guard_cfg=None):
+def job(family, condition, guard, seed, weeks, window=4, severity=None, control=None, guard_cfg=None, tag=""):
     s = dict(family=family, condition=condition, guard=bool(guard), seed=seed, window=window, severity=severity,
-             control=control, weeks=f"{weeks[0]}-{weeks[1]}", guard_cfg=json.dumps(guard_cfg) if guard_cfg else "")
+             control=control, weeks=f"{weeks[0]}-{weeks[1]}", guard_cfg=json.dumps(guard_cfg) if guard_cfg else "", tag=tag)
     s["run_id"] = spec_id(s)
     return s
 
@@ -48,8 +50,23 @@ def grid_pass1(cfg):
     return J
 
 
-def tune_grid(cfg, configs):
+TUNE_H = [2, 4, 8, None]
+TUNE_LAMBDA = [0.0, 0.5, 1.0]
+
+
+def tune_configs():
+    out = []
+    for h in TUNE_H:
+        for lam in TUNE_LAMBDA:
+            out.append((f"h{'inf' if h is None else h}_lam{lam}", {"l2": {"half_life_weeks": h, "reputation_lambda": lam}}))
+    return out
+
+
+def tune_grid(cfg, configs=None):
+    configs = configs or tune_configs()
     J = []
+    for c in ["reference", "stale", "low_quality", "combined"]:
+        J.append(job("atlas", c, 0, 0, DEV, tag="atlas"))
     for name, gc in configs:
         for c in ["reference", "low_quality", "combined"]:
             j = job("tune", c, 1, 0, DEV, guard_cfg=gc)
@@ -80,9 +97,10 @@ def write(J, name="jobs.csv"):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--final", action="store_true")
+    ap.add_argument("--tune", action="store_true")
     a = ap.parse_args()
     cfg = load_config()
-    J = final_grid(cfg) if a.final else grid_pass1(cfg)
+    J = final_grid(cfg) if a.final else tune_grid(cfg) if a.tune else grid_pass1(cfg)
     df = write(J)
     print(df.groupby("family").run_id.nunique().to_dict(), "unique runs:", df.run_id.nunique())
 

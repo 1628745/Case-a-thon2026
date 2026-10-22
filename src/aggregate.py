@@ -12,7 +12,7 @@ import pandas as pd
 
 from src.common import ROOT, config_hash, git_sha, load_config
 
-TABLES = ["weekly", "detector", "importance", "probe", "chain", "modlog"]
+TABLES = ["weekly", "detector", "importance", "probe", "chain", "modlog", "breakdown"]
 OUT = {"weekly": "weekly_metrics", "detector": "detector", "importance": "importance", "probe": "probe_preds",
        "chain": "chain"}
 CONDS = ["reference", "stale", "low_quality", "combined"]
@@ -191,6 +191,8 @@ def main():
         chain = chain.merge(probe_shift(data["probe"], w), on=["run_id", "week"], how="left")
     w.to_parquet(os.path.join(a.results_dir, "weekly_metrics.parquet"), index=False)
     data["detector"].to_parquet(os.path.join(a.results_dir, "detector.parquet"), index=False)
+    if len(data["breakdown"]):
+        data["breakdown"].to_parquet(os.path.join(a.results_dir, "breakdown.parquet"), index=False)
     data["importance"].to_parquet(os.path.join(a.results_dir, "importance.parquet"), index=False)
     data["probe"].to_parquet(os.path.join(a.results_dir, "probe_preds.parquet"), index=False)
     chain.to_parquet(os.path.join(a.results_dir, "chain.parquet"), index=False)
