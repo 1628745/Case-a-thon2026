@@ -72,3 +72,8 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 
 ## Step 9: pre-freeze review
 - Review subagent (code vs PLAN): no leakage, scoring, held-out, metric or injector issues. Low notes: (1) `results.json` could contain bare `NaN` -> fixed (strict JSON); (2) workload/history use minute-resolution times, so a scan up to 59 s after an accept in the same minute counts as already delivered (other packages only; negligible; kept); (3) the width-deferral reference uses in-sample P50 on the calibration week (deferral is still measured on real test packages; kept); (4) the held-out scorecard has 6 lines (no random-removal control in held-out weeks).
+
+## Steps 10-11: export and site
+- Console models are the week-25 retrain of low_quality seed 0 (Guard off/on), retrained by `export_site` with the frozen config. LightGBM names array-fit features `Column_i`; the export writes the real names (same order).
+- Site verification used the Claude desktop app's built-in browser (JS checks for console errors, chart rendering, overflow at 1440x900 and 375 px) instead of installing Playwright, which would download a browser outside the repo.
+- GitHub Pages enabled via `gh api` (repo is public): https://1628745.github.io/Case-a-thon2026/ from `main` `/docs`; `docs/.nojekyll` added.

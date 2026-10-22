@@ -3,10 +3,27 @@
   "low_quality": "The sloppy feed moves every link in week 5, the first week its rows enter training: bulk scans push delivery times to the end of the shift, so training labels run long (median +12.5 min, KS distance up), the model's promises on the fixed probe grid shift up by ~15 min, and promises widen. MAE crosses the noise threshold by week 8 as the bulk-scan rate ramps up. The damage lands mostly on the sloppy couriers' own packages (+40 min MAE) through their inflated history features. With the Guard, the injected share of training weight falls from ~10% to ~1% and every link stays near reference.",
   "combined": "Stale plus sloppy. Training on all past weeks dilutes the recent sloppy rows, and the frozen feature store stops absorbing their inflated durations in late June, so combined is less damaged than low quality alone. The Guard's first version made it worse by dropping history older than 7 days; keeping stale-but-informative history fixed that (recovery 74% on development weeks).",
   "stale": "Training rows get older and history features freeze in late June, yet the decision barely moves (+1.1 min): courier and area averages are stable over months, so stale history is still informative. The model shifts on the probe grid (it learned from older weeks) but the errors it causes sit in the multi-day tail.",
-  "unseen": "Held-out only. From week 18, 15% of couriers scan packages delivered at 40-70% of the true time. No burst, no duplicate: the L1 checks cannot see it. Only reputation (peer disagreement) and recency can respond.",
+  "unseen": "Held-out only. From week 18, 15% of couriers scan packages delivered at 40-70% of the true time. No burst, no duplicate: L1 flags caught 0.1% of these rows. Their packages lose +24 min MAE (232 vs 208 min) with or without the Guard, because their shortened history features feed the model directly; reputation only reweights training rows. Overall MAE gap 1.9 min, 7% recovered.",
   "controls": "Low quality, seed 0. Oracle filter (drop exactly the injected rows) and the Guard both sit near zero; random removal of the same number of rows is worse than doing nothing. Which rows you drop matters, not how many.",
   "dose": "Development weeks, seed 0. Without the Guard, damage grows steadily with the share of couriers bulk-scanning; with it, MAE stays within 2 min of reference even at 60%.",
   "frozen": "Reference data, seed 0. Frozen features alone cost nothing; a model trained once on weeks 0-3 and never retrained drifts upward. The model has a shelf life; the history it reads, here, does not."
  },
- "stress": []
+ "stress": [
+  {
+   "kind": "good",
+   "text": "Held-out weeks 22-25 (Golden Week, then weekly volume rising to 2.4x the development-week level), Guard frozen beforehand: the Guard recovered 90% of the low-quality MAE gap (225.3 -> 209.2 vs reference 207.4 min) and 78% of the combined gap, at +0.03% MAE on clean data and 5-7.5% deferral. Every held-out week, not just the average."
+  },
+  {
+   "kind": "bad",
+   "text": "Clear failure: the unseen early-scan defect. The Guard recovered only 7% of its 1.9-min MAE gap. The L1 checks caught 0.1% of its rows (precision 5%), and the early scanners' own packages stayed 24 min worse than reference. The miss-rate monitor did not fire either (Guard-on miss stayed 20-23%). A defect that makes labels shorter, without bursts or duplicates, gets past every layer we built."
+  },
+  {
+   "kind": "",
+   "text": "Next fix suggested by the failure: let a courier's reputation also gate their history features (fall back to area history when reputation is low), and add a one-sided check for label distributions that shift short. Neither was tested here; both would be tuned on development weeks only."
+  },
+  {
+   "kind": "",
+   "text": "Not testable on this data: GPS-age checks (GPS fix age is zero in every LaDe row). Label latency: training uses last week's labels as if all had arrived by the start of the test week."
+  }
+ ]
 }

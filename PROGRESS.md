@@ -14,7 +14,7 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - [x] 8 Discovery + tuning, DISCOVERY.md
 - [x] 9 Freeze (tag guard-v1-frozen) + final evaluation
 - [x] 10 Aggregate, export, in-browser model check
-- [ ] 11 Website complete + Pages
+- [x] 11 Website complete + Pages
 - [ ] 12 Paperwork, presentation kit, final review, DONE
 
 ## Log
@@ -33,3 +33,4 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - 2026-10-22 01:25 ET, step 9: pre-freeze review subagent: no high/medium findings; fixed low note (strict JSON in results.json). Tagging guard-v1-frozen.
 - 2026-10-22 01:45 ET, step 9: tag guard-v1-frozen pushed (7d87d88); final family 30/30 ok; every final row config_hash e54a0bf568c4, git_sha 7d87d88. Held-out scorecard 5/6: recovery LQ 90% / combined 78% (stale 52%), no harm +0.03%, deferral <= 7.5%, rare <= +2.2%, precision 0.95/0.94; FAIL promise quality; unseen early-scan defect only 7% recovered. GitHub Pages enabled (main /docs).
 - 2026-10-22 01:55 ET, step 10: aggregate + export_site (real results, week-25 low_quality seed-0 models, 300 trees each); in-browser model check `node scripts/check_models.js`: 80 predictions (20 inputs x 4 models, 10 with NaNs), max |js - python| = 0.000e+0 min -> PASS.
+- 2026-10-22 02:10 ET, step 11: site on real results; served locally: 19/19 assets HTTP 200, all docs JSON valid, no console errors, all 15 charts and every table render, no horizontal overflow at 1440x900 or 375 px (checked in the app's browser pane instead of Playwright); GitHub Pages enabled: https://1628745.github.io/Case-a-thon2026/
