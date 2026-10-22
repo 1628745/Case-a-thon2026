@@ -148,7 +148,8 @@ def apply_guard(tr, te, t, cfg, g, seed, threads):
                  defer_width=float(r_width.mean()), frac_flagged_train=float(fany.mean()),
                  flag_burst=float(flags.burst.mean()), flag_dup=float(flags.dup.mean()), flag_far=float(flags.far.mean()),
                  mean_rep=float(rep.rep.mean()), frac_rep_below_half=float((rep.rep < 0.5).mean()))
-    return {"m50": m50, "m80": m80, "offset": offset, "offset_global": glob, "tr": tr, "Xte": Xte,
+    return {"m50": m50, "m80": m80, "offset": offset, "offset_global": glob,
+            "width_med": {int(k): float(v) for k, v in wmed.items()}, "width_glob": wglob, "tr": tr, "Xte": Xte,
             "p80_test": p80_te, "defer": defer, "flag": fany, "rep": rep, "weekly_extra": extra,
             "defer_reasons": np.stack([r_hist, r_gps, r_area, r_width], 1)}
 

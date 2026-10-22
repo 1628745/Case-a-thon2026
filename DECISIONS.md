@@ -43,3 +43,10 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 - **Courier cap kept as specified** (2x the median courier's total weight). The median courier has 164 rows in a 4-week window, the busiest 400-1,100, so the cap scales down ~65% of rows. `frac_downweighted` = share of rows whose final weight is below half their recency-only weight, so it includes the cap.
 - **SHAP** values come from LightGBM's built-in TreeSHAP (`pred_contrib=True`), exact Shapley values for trees, on 1,000 test rows per run-week.
 - **End-to-end check (CQ, weeks 12/16/20, seed 0).** MAE guard off -> on: reference 162.5->162.8, 160.4->161.0, 231.7->232.0; low_quality 168.6->163.8, 171.6->161.6, 250.6->233.7; combined 167.5->170.0, 166.6->165.4, 239.2->237.7. Detector precision ~0.95 on low_quality. Width deferral 15-22% at k=2 (over budget; k is tuned in step 8).
+
+## Step 6: site skeleton
+- **Console models** = the week-25 retrain of the **low_quality** feed, seed 0, Guard off and on (P50 and P80 each). Low quality is the production-like failure (a sloppy source in today's feed). Stale features and the other scenarios are shown as per-package situations on top of it. Models are retrained deterministically by `export_site` with the same seed and settings as the final runs.
+- **Scenario locations.** The models use stop longitude/latitude, so scenarios need location inputs. They are medians over groups of packages snapped to a 0.1-degree cell (~10 km) and never displayed. Tree thresholds on lng/lat are part of the trained model, which PLAN allows on the site.
+- **In-browser check inputs** (20 = 10 real test rows + 10 synthetic rows with NaNs) are written to `logs/` (git-ignored), never to `docs/` or `results/`.
+- **Weekly metrics download** is `docs/data/weekly_metrics.csv`; `.gitignore` gets one exception for it (aggregates only, no ids).
+- **Narrative text** that depends on findings (mechanism captions, stress-test callouts, video link) lives in `docs/data/text.json`, written after discovery.

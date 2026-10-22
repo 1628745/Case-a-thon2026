@@ -1,7 +1,8 @@
 # Raw and processed data: never commit (145 MB file; LaDe terms)
-data/
+/data/
 *.csv
 !results/modification_log.csv
+!docs/data/weekly_metrics.csv
 *.parquet
 !results/*.parquet
 # Per-run outputs stay local; only aggregates are committed

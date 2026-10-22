@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Shelf-Life Guard</title>
+<meta name="description" content="W&amp;M AI Club Case-a-thon 2026: when more delivery data makes promises worse, and a three-layer Guard that restores them.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%232f6fb0'/%3E%3C/svg%3E">
+</head>
+<body>
+<nav class="top" aria-label="Sections">
+  <span class="brand">Shelf-Life Guard</span>
+  <a href="#overview">1 Overview</a>
+  <a href="#console">2 Console</a>
+  <a href="#timeline">3 Timeline</a>
+  <a href="#mechanism">4 Mechanism</a>
+  <a href="#countermeasure">5 Countermeasure</a>
+  <a href="#stress">6 Stress tests</a>
+  <a href="#oversight">7 Oversight</a>
+  <a href="#methods">8 Methods</a>
+  <span class="spacer"></span>
+  <button id="theme" aria-label="Toggle light or dark theme">Theme</button>
+</nav>
+<main>
+
+<!-- 1 OVERVIEW -->
+<section class="slide" id="overview">
+  <div class="kicker">Case-a-thon 2026 · Unintentional Data Poisoning · LaDe last-mile delivery</div>
+  <h1>Data has a shelf life and a source reputation.</h1>
+  <p id="ov-thesis">Past a point, older or noisier data makes delivery promises worse. We measure that point on six months of real Chongqing deliveries and act on it with a three-layer Guard around the model.</p>
+  <p><b>The decision.</b> A dispatcher accepts a package and must promise a delivery window. A LightGBM model gives an expected duration (median) and a promise (80th percentile). A promise that is too short is a missed promise; one that is too long is padded, uncompetitive service. The model is retrained every week on recent deliveries, so whatever enters the feed enters the promise.</p>
+  <div class="chain" aria-label="Four-link chain">
+    <div class="link"><b>1 Data</b><small>age of training rows, share from unreliable sources, feature age</small></div><div class="arrow">→</div>
+    <div class="link"><b>2 Training signal</b><small>label distribution vs. truth (median, KS distance)</small></div><div class="arrow">→</div>
+    <div class="link"><b>3 Model</b><small>predictions on a fixed probe grid, SHAP importance</small></div><div class="arrow">→</div>
+    <div class="link"><b>4 Decision</b><small>promise width, miss rate, P90 error, rare areas</small></div>
+  </div>
+  <div class="grid g3" id="ov-headline"></div>
+  <p id="ov-block" class="muted"></p>
+  <p><a id="video-link" href="#">Fallback video (link added by the team)</a> · <a href="https://github.com/1628745/Case-a-thon2026">Code and results repository</a></p>
+</section>
+
+<!-- 2 CONSOLE -->
+<section class="slide console" id="console">
+  <div class="kicker">2 · Dispatcher console</div>
+  <h2>One package, Guard off vs. Guard on</h2>
+  <p>Predictions are computed live in your browser by the exported models (the same trees the Python pipeline trained). Pick a scenario; every scenario is constructed from aggregate values, not from a real package.</p>
+  <div class="controls">
+    <label>Scenario <select id="sc-pick"></select></label>
+    <span class="muted" id="sc-desc"></span>
+  </div>
+  <div class="grid g2">
+    <div class="card side off" id="sc-off"></div>
+    <div class="card side on" id="sc-on"></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Correction panel</h3>
+      <p class="muted">What the dispatcher does with a deferred package. Corrections are logged for the data steward.</p>
+      <div class="controls">
+        <label>Override promise (min) <input id="cx-promise" type="number" min="0" step="5" style="width:110px"></label>
+        <label><input id="cx-flag" type="checkbox"> Flag source for review</label>
+      </div>
+      <div class="controls"><input id="cx-note" type="text" placeholder="Note (optional)" style="flex:1;min-width:200px"><button class="primary" id="cx-log">Log correction</button></div>
+      <div class="log" id="cx-out" aria-live="polite">No corrections yet.</div>
+    </div>
+    <div class="card">
+      <h3>What the Guard checked</h3>
+      <div id="sc-rules"></div>
+      <p class="muted" id="sc-timing"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 TIMELINE -->
+<section class="slide" id="timeline">
+  <div class="kicker">3 · Timeline</div>
+  <h2>Week by week: reference, stale, low quality, combined</h2>
+  <p>Each line is one condition, retrained every week on the four weeks before it (stale: all past weeks). Bands show the spread across three seeds. Scoring always uses the untouched delivery times.</p>
+  <div class="controls">
+    <label>Metric <select id="tl-metric"></select></label>
+    <label>Guard <select id="tl-guard"><option value="both">off and on</option><option value="off">off</option><option value="on">on</option></select></label>
+    <label>Conditions <span id="tl-conds"></span></label>
+  </div>
+  <div class="chart tall" id="tl-main"></div>
+  <div class="controls"><label>Data tracks for <select id="tl-track-cond"></select></label></div>
+  <div class="grid g4">
+    <div class="chart small" id="tl-age"></div>
+    <div class="chart small" id="tl-sloppy"></div>
+    <div class="chart small" id="tl-feat"></div>
+    <div class="chart small" id="tl-vol"></div>
+  </div>
+  <p class="muted" id="tl-notes"></p>
+</section>
+
+<!-- 4 MECHANISM -->
+<section class="slide" id="mechanism">
+  <div class="kicker">4 · Mechanism</div>
+  <h2>Where the damage enters the chain</h2>
+  <div class="controls"><label>Condition <select id="mx-cond"></select></label><span class="muted">Guard off (solid) vs. on (dashed)</span></div>
+  <div class="grid g4">
+    <div><h3>1 Data</h3><div class="chart small" id="mx-data"></div></div>
+    <div><h3>2 Training labels</h3><div class="chart small" id="mx-label"></div></div>
+    <div><h3>3 Model (probe grid)</h3><div class="chart small" id="mx-model"></div></div>
+    <div><h3>4 Decision</h3><div class="chart small" id="mx-dec"></div></div>
+  </div>
+  <p id="mx-text"></p>
+  <div class="grid g3">
+    <div class="card"><h3>Oracle vs. random removal vs. Guard</h3><div class="chart small" id="mx-ctrl"></div><p class="muted" id="mx-ctrl-t"></p></div>
+    <div class="card"><h3>Dose-response</h3><div class="chart small" id="mx-dose"></div><p class="muted" id="mx-dose-t"></p></div>
+    <div class="card"><h3>Frozen model vs. frozen features</h3><div class="chart small" id="mx-frozen"></div><p class="muted" id="mx-frozen-t"></p></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>What the model leans on (mean |SHAP|, dev weeks)</h3><div class="chart" id="mx-shap"></div></div>
+</section>
+
+<!-- 5 COUNTERMEASURE -->
+<section class="slide" id="countermeasure">
+  <div class="kicker">5 · Countermeasure</div>
+  <h2>The Guard: three layers around the model</h2>
+  <div class="card"><svg id="cm-diagram" viewBox="0 0 1000 190" width="100%" role="img" aria-label="Guard layers diagram"></svg></div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>L1 Ingest checks</h3><p>Label-free flags on every record: non-positive duration; five or more packages from one courier scanned in the same minute; repeated package id (keep the first); GPS fix older than 30 min; courier more than 30 km from the stop. Flagged rows are quarantined at weight 0.05, never deleted.</p></div>
+    <div class="card"><h3>L2 Training weights</h3><p>weight = recency × reputation × flag. Recency halves every <span data-k="h">h</span> weeks. Each courier earns a reputation from the training window only: their flag rate and how far their durations sit from other couriers in the same area and hour, shrunk toward neutral with a 30-record prior. No courier may hold more than 2× the median courier's weight. History features older than 7 days are dropped.</p></div>
+    <div class="card"><h3>L3 Serve-time check</h3><p>The promise is a conformal P80: fit on the older window weeks, calibrated per area type on the most recent week so each type stays near 80% coverage. A package is deferred to a person when its area is unseen, its GPS fix is stale, its history is stale with no fallback, or its interval is wider than <span data-k="k">k</span>× its area type's usual width.</p></div>
+  </div>
+  <div class="controls" style="margin-top:16px"><label>Block <select id="cm-block"><option value="dev">Development weeks 4-21</option><option value="final">Held-out weeks 22-25</option></select></label></div>
+  <div class="card tablewrap"><table id="cm-table"></table></div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>Recovery of the MAE gap</h3><div id="cm-recovery"></div></div>
+    <div class="card"><h3>Detector (L1 flags vs. injected rows)</h3><div id="cm-detector"></div></div>
+    <div class="card"><h3>Shelf life: training window length</h3><div class="chart small" id="cm-shelf"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>Scorecard</h3><div class="tablewrap"><table id="cm-score"></table></div></div>
+  <div class="card" style="margin-top:16px"><h3>Alternatives we rejected</h3>
+    <ul>
+      <li><b>Hard-delete flagged rows.</b> Irreversible and loses rare valid data; the random-removal control shows lost volume costs accuracy.</li>
+      <li><b>Generic outlier detection.</b> Fails when the sloppy feed becomes the majority of a courier's records.</li>
+      <li><b>Retrain on shorter windows only.</b> Helps staleness, amplifies the sloppy feed and starves rare areas (see the shelf-life curve).</li>
+      <li><b>A bigger model.</b> Memorizes noisy labels.</li>
+      <li><b>A drift alarm alone.</b> Detects, does not fix. We keep one as the monitor.</li>
+      <li><b>Manual cleaning.</b> Does not scale and cannot be tested.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 6 STRESS -->
+<section class="slide" id="stress">
+  <div class="kicker">6 · Stress tests and limits</div>
+  <h2>Held-out weeks, an unseen defect, and where it breaks</h2>
+  <p>The Guard settings were frozen (git tag <code>guard-v1-frozen</code>) before weeks 22-25 were ever scored. Those weeks include most of National Day Golden Week and a volume surge, and a defect the Guard was never tuned on: 15% of couriers start scanning packages delivered early (at 40-70% of the true time) from week 18.</p>
+  <div class="grid g2">
+    <div class="card tablewrap"><h3>Held-out results</h3><table id="st-table"></table></div>
+    <div class="card"><h3>Held-out weekly MAE</h3><div class="chart small" id="st-chart"></div></div>
+  </div>
+  <div id="st-findings"></div>
+  <div class="grid g2">
+    <div class="card"><h3>Tradeoffs</h3><ul id="st-trade"></ul></div>
+    <div class="card"><h3>When not to use this system</h3><ul>
+      <li>When labels come from one source only: reputation needs peers to compare against.</li>
+      <li>When the data's problems are not visible in scans, GPS or timing (e.g. the wrong package delivered on time).</li>
+      <li>When nobody is staffed to handle deferrals and review quarantined sources.</li>
+      <li>For a new city without a few weeks of history: recency, reputation and conformal calibration all need a window.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- 7 OVERSIGHT -->
+<section class="slide" id="oversight">
+  <div class="kicker">7 · Oversight and governance</div>
+  <h2>Who does what, and when to stop</h2>
+  <div class="grid g2">
+    <div class="card tablewrap"><h3>Roles</h3><table>
+      <tr><th class="l">Role</th><th class="l wrap">Responsibility</th></tr>
+      <tr><td class="l">Dispatcher</td><td class="l wrap">Uses the promise; handles deferred packages (approve the promise, override it, or flag the source); logs corrections.</td></tr>
+      <tr><td class="l">Data steward</td><td class="l wrap">Reviews quarantined records and low-reputation sources weekly; can restore a courier's reputation or escalate a scanner problem.</td></tr>
+      <tr><td class="l">Model owner</td><td class="l wrap">Signs off each weekly retrain (scorecard lines, monitor alerts) before it serves; owns rollback.</td></tr>
+      <tr><td class="l">Operations manager</td><td class="l wrap">Approves the pilot, its district and its stop conditions; receives the weekly report.</td></tr>
+    </table></div>
+    <div class="card"><h3>Defer rules and the correction path</h3>
+      <ol>
+        <li>The Guard defers a package when its area is unseen in the training window, its GPS fix is older than 30 min, its history features are stale and cannot be dropped, or its promise interval is unusually wide.</li>
+        <li>The dispatcher sees the health card and reason, then approves, overrides the promise, or flags the source.</li>
+        <li>Flags and overrides go to the data steward's queue with the reason and the courier's reputation.</li>
+        <li>The steward's decisions feed back as reputation adjustments at the next weekly retrain; the model owner sees the count.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Human effort vs. compute</h3><div id="ov-effort"></div></div>
+    <div class="card"><h3>Bounded pilot</h3>
+      <ul>
+        <li><b>Shadow mode,</b> one district, 4 weeks: the Guard computes promises and deferrals alongside the current process; dispatchers see but do not act on them.</li>
+        <li><b>Checkpoints</b> at weeks 2 and 4: promise-miss rate 17-23%, deferrals at or under 10% of packages, no area type more than 5% worse than without the Guard, steward queue cleared weekly.</li>
+        <li><b>Owner:</b> the model owner runs it; the operations manager decides go/no-go at week 4.</li>
+        <li><b>Stop conditions:</b> two consecutive weeks with miss rate outside 15-25%; deferrals above 15% for a week; any area type's error more than 10% worse; a steward backlog older than one week.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card tablewrap" style="margin-top:16px"><h3>NIST AI RMF mapping (optional)</h3><table>
+    <tr><th class="l">Function</th><th class="l wrap">Here</th></tr>
+    <tr><td class="l">Govern</td><td class="l wrap">Roles above; frozen config tag; decisions log; pilot approval.</td></tr>
+    <tr><td class="l">Map</td><td class="l wrap">The four-link chain; the decision and its two failure costs (missed vs. padded promise).</td></tr>
+    <tr><td class="l">Measure</td><td class="l wrap">Weekly metrics with seed spread; detector confusion; scorecard; held-out and unseen-defect tests.</td></tr>
+    <tr><td class="l">Manage</td><td class="l wrap">Quarantine, reputation weights, deferral to people, monitor alerts, stop conditions.</td></tr>
+  </table></div>
+</section>
+
+<!-- 8 METHODS -->
+<section class="slide" id="methods">
+  <div class="kicker">8 · Methods and downloads</div>
+  <h2>Data, splits, and how to reproduce</h2>
+  <div class="grid g2">
+    <div class="card tablewrap"><h3>Data manifest</h3><table id="me-manifest"></table></div>
+    <div class="card"><h3>Splits and retraining</h3>
+      <table>
+        <tr><th class="l">Block</th><th>Weeks</th><th class="l">Dates (2022)</th><th class="l">Use</th></tr>
+        <tr><td class="l">Warm-up</td><td>0-3</td><td class="l">May 1-28</td><td class="l">Training history only</td></tr>
+        <tr><td class="l">Development</td><td>4-21</td><td class="l">May 29-Oct 1</td><td class="l">Exploration, diagnostics, tuning</td></tr>
+        <tr><td class="l">Held-out</td><td>22-25</td><td class="l">Oct 2-29</td><td class="l">Final evaluation after the freeze</td></tr>
+      </table>
+      <p>Every test week the models are refit from scratch on the four weeks before it (the stale condition uses all past weeks). History features use only deliveries scanned before the package's day. Training and test never share a week. Seeds 0, 1, 2. Scoring always uses the untouched delivery times. <span id="me-runs"></span></p>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card tablewrap"><h3>Modification log (injected changes)</h3><table id="me-modlog"></table></div>
+    <div class="card"><h3>Prompt requirement coverage</h3><table>
+      <tr><th class="l">Requirement</th><th class="l">Where</th></tr>
+      <tr><td class="l">1 Decision</td><td class="l">Overview, Console</td></tr>
+      <tr><td class="l">2 Reference</td><td class="l">Timeline, Methods</td></tr>
+      <tr><td class="l">3 Degradation, separately and together</td><td class="l">Timeline, Methods</td></tr>
+      <tr><td class="l">4 Over time: age, quality, volume</td><td class="l">Timeline</td></tr>
+      <tr><td class="l">5 Mechanism</td><td class="l">Mechanism</td></tr>
+      <tr><td class="l">6 Countermeasure incl. unseen period</td><td class="l">Countermeasure, Stress tests</td></tr>
+      <tr><td class="l">7 Limits and next steps</td><td class="l">Stress tests, Oversight</td></tr>
+      <tr><td class="l">Oversight walkthrough</td><td class="l">Console, Oversight</td></tr>
+      <tr><td class="l">Results and manifest</td><td class="l">Methods</td></tr>
+      <tr><td class="l">Fallback video</td><td class="l">Overview</td></tr>
+    </table></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Rights and licenses</h3>
+      <p>LaDe (Cainiao-AI). Repository metadata: <b>Apache-2.0</b>. The authors' paper: <b>CC BY-NC 4.0</b>. We use the data for non-commercial research; this site shows only aggregates, a synthetic probe grid, constructed scenarios and trained models: no raw rows, courier ids, package or GPS coordinates, or maps. The raw files are not redistributed.</p>
+      <p>Sources: <a href="https://huggingface.co/datasets/Cainiao-AI/LaDe">huggingface.co/datasets/Cainiao-AI/LaDe</a>, <a href="https://github.com/wenhaomin/LaDe">github.com/wenhaomin/LaDe</a>.</p>
+    </div>
+    <div class="card"><h3>AI and prompt disclosure</h3>
+      <p>The AI components under test are the two LightGBM models (median and P80) and the Guard around them. Separately, Claude (Anthropic) was used as a tool: it wrote the pipeline, ran the experiments, analysed the results and built this site autonomously from the team's written plan, logging every judgment call in <code>DECISIONS.md</code>. Human review points: the plan, the discovery write-up, and the final presentation. See <code>AI_DISCLOSURE.md</code>.</p>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Reproduce</h3>
+<pre class="mono" style="white-space:pre-wrap">python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+# put delivery_cq.csv in data/raw/
+python -m src.prep
+python -m src.jobs &amp;&amp; python -m src.run --all
+python -m src.aggregate &amp;&amp; python -m src.export_site</pre>
+      <p id="me-versions" class="muted"></p>
+    </div>
+    <div class="card"><h3>Downloads</h3>
+      <ul>
+        <li><a href="data/results.json" download>results.json</a>: headline numbers, scorecard, every cell</li>
+        <li><a href="data/weekly_metrics.csv" download>weekly_metrics.csv</a>: one row per run and test week</li>
+        <li><a href="data/manifest.json" download>manifest.json</a>: data manifest</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+<footer>W&amp;M AI Club Case-a-thon 2026 · Built with LightGBM and Plotly (vendored, no trackers) · <span id="ft-build"></span></footer>
+<script src="vendor/plotly-2.35.2.min.js"></script>
+<script src="trees.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

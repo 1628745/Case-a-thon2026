@@ -64,13 +64,14 @@ def window_weeks(spec, t, cfg):
     return list(range(max(0, t - int(w)), t))
 
 
-def run(spec, base, cfg, threads=1, diag=True):
+def run(spec, base, cfg, threads=1, diag=True, keep_models=False):
     gcfg = merged_guard_cfg(cfg, spec)
     feed, modlog = build_run_feed(base, spec, cfg)
     rare = rare_types(base, cfg)
     rng = np.random.default_rng(spec["seed"] + 1000)
     rows, det, imp, probes, chain = [], [], [], [], []
     frozen = None
+    models = {}
     chash, sha = config_hash(cfg), git_sha()
     for t in spec["weeks"]:
         wks = window_weeks(spec, t, cfg)
@@ -133,10 +134,14 @@ def run(spec, base, cfg, threads=1, diag=True):
             fl, inj = res["flag"], tr_used.injected.to_numpy()
             det.append(dict(run_id=spec["run_id"], week=t, tp=int((fl & inj).sum()), fp=int((fl & ~inj).sum()),
                             fn=int((~fl & inj).sum()), tn=int((~fl & ~inj).sum())))
+        if keep_models:
+            models[t] = dict(res, te=te, p50_test=p50, p80_used=p80)
         if diag:
             from src.diagnose import diagnostics
             d_imp, d_probe, d_chain = diagnostics(spec, t, res, tr_used, te, Xte, cfg, base)
             imp += d_imp; probes += d_probe; chain.append(d_chain)
     out = {"weekly": pd.DataFrame(rows), "detector": pd.DataFrame(det), "importance": pd.DataFrame(imp),
            "probe": pd.DataFrame(probes), "chain": pd.DataFrame(chain), "modlog": pd.DataFrame(modlog)}
+    if keep_models:
+        out["models"] = models
     return out
