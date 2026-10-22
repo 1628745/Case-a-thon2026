@@ -8,7 +8,7 @@
 | P80 model | LightGBM regressor, `objective="quantile"`, `alpha=0.8`, same settings | The promised delivery window |
 | The Guard | Rule-based layers around the models (L1 ingest checks, L2 training weights incl. a courier reputation score, L3 conformal promise and deferral, a miss-rate monitor) | Decides which data trains the models and which packages go to a person |
 
-Both models are retrained from scratch every week (about 1,100 weekly retrains in total across all experiments). The final-week models are exported to `docs/models/` and run in the browser on the site.
+Both models are retrained from scratch every week (2,028 weekly retrains across 136 runs, including the tuning sweep and superseded pass-1 Guard runs). The final-week models are exported to `docs/models/` and run in the browser on the site.
 
 ## AI used as a tool
 

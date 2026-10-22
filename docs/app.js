@@ -449,7 +449,8 @@
   function renderMethods() {
     var m = D.manifest;
     var rows = [["Dataset", m.name], ["Sources", m.sources.join(" , ")], ["Retrieved", m.retrieved], ["File", m.file + " (" + f0(m.bytes) + " bytes)"],
-      ["SHA-256", m.sha256], ["Raw rows", f0(m.rows_raw)], ["Couriers / areas / regions", f0(m.couriers) + " / " + f0(m.areas) + " / " + f0(m.regions)],
+      ["SHA-256", m.sha256], ["Raw rows", f0(m.rows_raw)], ["Packages kept (independent cases)", m.independent_cases || f0(m.rows)], ["Couriers / areas / regions (study subset)", f0(m.couriers) + " / " + f0(m.areas) + " / " + f0(m.regions)],
+      ["Raw file couriers / areas", f0(m.raw_couriers) + " / " + f0(m.raw_areas)], ["Missing values", m.missing_values || ""], ["Reference copy", m.reference_copy || ""],
       ["Accept dates", m.date_range.join(" to ")], ["Time format", m.time_format], ["Filters", m.filters],
       ["Observed issues (kept)", Object.keys(m.observed_issues).filter(function (k) { return typeof m.observed_issues[k] !== "object"; }).map(function (k) { return k + " " + m.observed_issues[k]; }).join("; ")],
       ["Licenses", "repository metadata " + m.licenses.repository_metadata + "; paper " + m.licenses.paper]];

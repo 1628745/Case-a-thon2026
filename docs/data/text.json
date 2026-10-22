@@ -5,13 +5,13 @@
   "stale": "Training rows get older and history features freeze in late June, yet the decision barely moves (+1.1 min): courier and area averages are stable over months, so stale history is still informative. The model shifts on the probe grid (it learned from older weeks) but the errors it causes sit in the multi-day tail.",
   "unseen": "Held-out only. From week 18, 15% of couriers scan packages delivered at 40-70% of the true time. No burst, no duplicate: L1 flags caught 0.1% of these rows. Their packages lose +24 min MAE (232 vs 208 min) with or without the Guard, because their shortened history features feed the model directly; reputation only reweights training rows. Overall MAE gap 1.9 min, 7% recovered.",
   "controls": "Low quality, seed 0. Oracle filter (drop exactly the injected rows) and the Guard both sit near zero; random removal of the same number of rows is worse than doing nothing. Which rows you drop matters, not how many.",
-  "dose": "Development weeks, seed 0. Without the Guard, damage grows steadily with the share of couriers bulk-scanning; with it, MAE stays within 2 min of reference even at 60%.",
+  "dose": "Development weeks, seed 0. Without the Guard, damage grows steadily with the share of couriers bulk-scanning; with it, MAE stays within about 2 min of reference even at 60%.",
   "frozen": "Reference data, seed 0. Frozen features alone cost nothing; a model trained once on weeks 0-3 and never retrained drifts upward. The model has a shelf life; the history it reads, here, does not."
  },
  "stress": [
   {
    "kind": "good",
-   "text": "Held-out weeks 22-25 (Golden Week, then weekly volume rising to 2.4x the development-week level), Guard frozen beforehand: the Guard recovered 90% of the low-quality MAE gap (225.3 -> 209.2 vs reference 207.4 min) and 78% of the combined gap, at +0.03% MAE on clean data and 5-7.5% deferral. Every held-out week, not just the average."
+   "text": "Held-out weeks 22-25 (Golden Week, then weekly volume rising to about 2.9x the development-week average), Guard frozen beforehand: the Guard recovered 90% of the low-quality MAE gap (225.3 -> 209.2 vs reference 207.4 min) and 78% of the combined gap, at +0.03% MAE on clean data and 5-8% deferral. Every held-out week, not just the average."
   },
   {
    "kind": "bad",

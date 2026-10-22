@@ -1,6 +1,24 @@
+DONE (2026-10-22 02:35 ET). Site: https://1628745.github.io/Case-a-thon2026/ · tag guard-v1-frozen
+
 # PROGRESS
 
-Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go here at the top.
+## Summary for the team
+1. Decision studied: delivery promise (P50 + P80 LightGBM, retrained weekly) on LaDe Chongqing, 904,679 packages, 26 weeks.
+2. The poison is the source, not the age: a sloppy courier feed raises MAE in proportion to its share (dose 0/15/35/60% -> 191/196/203/215 min); older data never hurt (no shelf-life U-curve; frozen features cost 0; only a never-retrained model drifts, +2.5 min).
+3. Damage enters every link in week 5, the first week sloppy rows reach training (labels -> probe promises -> width/miss), MAE follows by week 8; it lands mostly on the sloppy couriers' own packages (+40 min).
+4. Guard (frozen: keep history, h=4, lambda=0.5, k=4) on held-out weeks 22-25: recovers 90% of the low-quality gap, 78% combined, 52% stale; +0.03% MAE on clean data; 5-8% deferral; detector precision 0.94-0.95.
+5. Held-out scorecard 5/6 (dev 6/7): Promise quality fails (calibrated promise 2-4% wider on clean data).
+6. Clear failure: unseen early-scan defect, 7% recovered; L1 catches 0.1% of it and the monitor stays quiet. Shown on the site.
+7. Discovery overturned a plan rule: dropping 7-day-old features caused the Guard's combined failure; logged and tested in the one sweep.
+8. In-browser models match Python exactly (80 predictions, max diff 0).
+9. All judgment calls: DECISIONS.md; findings: DISCOVERY.md; talk + 15 Q&A: PRESENTATION.md.
+10. GitHub Pages is enabled (main /docs); no raw data, ids or coordinates in git.
+
+## Team to-dos
+- Record the fallback video (shot list in PRESENTATION.md) and put its URL in docs/data/text.json as "video".
+- Rehearse the 10-minute run of show on the live site; review DISCOVERY.md (held-out rerun is ~12 min if settings change).
+
+
 
 ## Steps (see PLAN.md section 12)
 - [x] 0 Environment, data placement, .gitignore, first push
@@ -15,7 +33,7 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - [x] 9 Freeze (tag guard-v1-frozen) + final evaluation
 - [x] 10 Aggregate, export, in-browser model check
 - [x] 11 Website complete + Pages
-- [ ] 12 Paperwork, presentation kit, final review, DONE
+- [x] 12 Paperwork, presentation kit, final review, DONE
 
 ## Log
 (append one line per milestone: timestamp, step, what happened)
@@ -34,3 +52,4 @@ Status: IN PROGRESS. Resume at the first unchecked step. Blockers (if any) go he
 - 2026-10-22 01:45 ET, step 9: tag guard-v1-frozen pushed (7d87d88); final family 30/30 ok; every final row config_hash e54a0bf568c4, git_sha 7d87d88. Held-out scorecard 5/6: recovery LQ 90% / combined 78% (stale 52%), no harm +0.03%, deferral <= 7.5%, rare <= +2.2%, precision 0.95/0.94; FAIL promise quality; unseen early-scan defect only 7% recovered. GitHub Pages enabled (main /docs).
 - 2026-10-22 01:55 ET, step 10: aggregate + export_site (real results, week-25 low_quality seed-0 models, 300 trees each); in-browser model check `node scripts/check_models.js`: 80 predictions (20 inputs x 4 models, 10 with NaNs), max |js - python| = 0.000e+0 min -> PASS.
 - 2026-10-22 02:10 ET, step 11: site on real results; served locally: 19/19 assets HTTP 200, all docs JSON valid, no console errors, all 15 charts and every table render, no horizontal overflow at 1440x900 or 375 px (checked in the app's browser pane instead of Playwright); GitHub Pages enabled: https://1628745.github.io/Case-a-thon2026/
+- 2026-10-22 02:35 ET, step 12: MANIFEST, README, AI_DISCLOSURE, PRESENTATION final; final review subagent: 3 material + 3 minor text findings (site Guard text matched rejected settings, volume 2.9x, manifest.json subset fields) all fixed; 19 tests pass; pushed. DONE.

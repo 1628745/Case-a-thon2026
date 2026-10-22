@@ -121,8 +121,8 @@
   <div class="card"><svg id="cm-diagram" viewBox="0 0 1000 190" width="100%" role="img" aria-label="Guard layers diagram"></svg></div>
   <div class="grid g3" style="margin-top:16px">
     <div class="card"><h3>L1 Ingest checks</h3><p>Label-free flags on every record: non-positive duration; five or more packages from one courier scanned in the same minute; repeated package id (keep the first); GPS fix older than 30 min; courier more than 30 km from the stop. Flagged rows are quarantined at weight 0.05, never deleted.</p></div>
-    <div class="card"><h3>L2 Training weights</h3><p>weight = recency × reputation × flag. Recency halves every <span data-k="h">h</span> weeks. Each courier earns a reputation from the training window only: their flag rate and how far their durations sit from other couriers in the same area and hour, shrunk toward neutral with a 30-record prior. No courier may hold more than 2× the median courier's weight. History features older than 7 days are dropped.</p></div>
-    <div class="card"><h3>L3 Serve-time check</h3><p>The promise is a conformal P80: fit on the older window weeks, calibrated per area type on the most recent week so each type stays near 80% coverage. A package is deferred to a person when its area is unseen, its GPS fix is stale, its history is stale with no fallback, or its interval is wider than <span data-k="k">k</span>× its area type's usual width.</p></div>
+    <div class="card"><h3>L2 Training weights</h3><p>weight = recency × reputation × flag. Recency halves every <span data-k="h">h</span> weeks. Each courier earns a reputation from the training window only: their flag rate and how far their durations sit from other couriers in the same area and hour, shrunk toward neutral with a 30-record prior. No courier may hold more than 2× the median courier's weight. Stale history is kept (it stayed informative); a feature-store alert goes to the data steward when its mean age passes 7 days.</p></div>
+    <div class="card"><h3>L3 Serve-time check</h3><p>The promise is a conformal P80: fit on the older window weeks, calibrated per area type on the most recent week so each type stays near 80% coverage. A package is deferred to a person when its area is unseen, its GPS fix is stale, or its interval is wider than <span data-k="k">k</span>× its area type's usual width.</p></div>
   </div>
   <div class="controls" style="margin-top:16px"><label>Block <select id="cm-block"><option value="dev">Development weeks 4-21</option><option value="final">Held-out weeks 22-25</option></select></label></div>
   <div class="card tablewrap"><table id="cm-table"></table></div>
@@ -179,7 +179,7 @@
     </table></div>
     <div class="card"><h3>Defer rules and the correction path</h3>
       <ol>
-        <li>The Guard defers a package when its area is unseen in the training window, its GPS fix is older than 30 min, its history features are stale and cannot be dropped, or its promise interval is unusually wide.</li>
+        <li>The Guard defers a package when its area is unseen in the training window, its GPS fix is older than 30 min, or its promise interval is unusually wide (more than k× its area type's usual width). Stale history does not defer packages; it raises a feature-store alert to the data steward.</li>
         <li>The dispatcher sees the health card and reason, then approves, overrides the promise, or flags the source.</li>
         <li>Flags and overrides go to the data steward's queue with the reason and the courier's reputation.</li>
         <li>The steward's decisions feed back as reputation adjustments at the next weekly retrain; the model owner sees the count.</li>
