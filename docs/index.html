@@ -28,7 +28,7 @@
 <section class="slide" id="overview">
   <div class="kicker">Case-a-thon 2026 · Unintentional Data Poisoning · LaDe last-mile delivery</div>
   <h1>Data has a shelf life and a source reputation.</h1>
-  <p id="ov-thesis">Past a point, older or noisier data makes delivery promises worse. We measure that point on six months of real Chongqing deliveries and act on it with a three-layer Guard around the model.</p>
+  <p id="ov-thesis">We measured both on six months of real Chongqing deliveries. <b>Source reputation is what matters here:</b> a sloppy source makes promises worse in proportion to its share, from the first week its records enter training. <b>The data's shelf life is long:</b> months-old history stayed informative, and only a model that is never retrained decays. A three-layer Guard built on that evidence restores most of the lost accuracy, and we show where it still falls short.</p>
   <p><b>The decision.</b> A dispatcher accepts a package and must promise a delivery window. A LightGBM model gives an expected duration (median) and a promise (80th percentile). A promise that is too short is a missed promise; one that is too long is padded, uncompetitive service. The model is retrained every week on recent deliveries, so whatever enters the feed enters the promise.</p>
   <div class="chain" aria-label="Four-link chain">
     <div class="link"><b>1 Data</b><small>age of training rows, share from unreliable sources, feature age</small></div><div class="arrow">→</div>

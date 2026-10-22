@@ -21,7 +21,7 @@
   function pct(x, d) { return x === null || x === undefined || isNaN(x) ? "–" : (100 * x).toFixed(d === undefined ? 1 : d) + "%"; }
   function hm(min) { if (min === null || isNaN(min)) return "–"; var h = Math.floor(min / 60), m = Math.round(min % 60); return h + " h " + (m < 10 ? "0" : "") + m + " min"; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function getJSON(p) { return fetch(p).then(function (r) { if (!r.ok) throw new Error(p + " " + r.status); return r.json(); }); }
+  function getJSON(p) { return fetch(p, { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error(p + " " + r.status); return r.json(); }); }
   function cell(block, c, g) {
     var b = (D.summary[block] || {}).cells || [];
     for (var i = 0; i < b.length; i++) if (b[i].condition === c && b[i].guard === g) return b[i];
@@ -257,7 +257,7 @@
       plot(id, tr, { title: { text: title, font: { size: 12 } }, yaxis: { tickformat: fmt || "" }, margin: { l: 44, t: 30, b: 30 }, legend: { y: -0.3 } });
     }
     track("tl-age", "mean_train_age_days", "Training-row age (days, weight-avg)");
-    track("tl-sloppy", "sloppy_share_train", "Sloppy-source share of training weight", ".0%");
+    track("tl-sloppy", "injected_share_train", "Injected rows: share of training weight", ".0%");
     track("tl-feat", "feature_age_days", "History-feature age (days)");
     track("tl-vol", "n_test", "Packages per test week");
     $("tl-notes").textContent = "Shaded: held-out weeks 22-25 (scored once, after the freeze). Dotted lines: defect onsets and real events. " +
@@ -289,11 +289,16 @@
       { x: on ? on.week : [], y: gapOn, name: "Guard on", mode: "lines", line: { color: css("--on"), dash: "dash" }, type: "scatter" }],
       { title: { text: "MAE gap vs. reference (min)", font: { size: 11 } }, margin: { l: 44, t: 30, b: 30 }, legend: { y: -0.3 } });
     $("mx-text").textContent = (D.mechText && D.mechText[c]) || "";
-    var ct = D.mechanism.controls.map(function (s, i) {
-      var cl = [css("--ref"), css("--off"), css("--on"), css("--accent"), css("--warn")][i % 5];
-      return { x: s.week, y: s.mae, name: s.label, mode: "lines", line: { color: cl, dash: i === 3 ? "dot" : i === 4 ? "dashdot" : "solid" }, type: "scatter" };
-    });
-    plot("mx-ctrl", ct, { yaxis: { title: { text: "MAE (min)" } }, margin: { l: 48, t: 10, b: 30 }, legend: { y: -0.35, font: { size: 10 } } });
+    function gapSeries(list, colors, dashes) {
+      var base = list[0];
+      return list.slice(1).map(function (s, i) {
+        var y = s.week.map(function (w, j) { var k = base.week.indexOf(w); return k < 0 ? null : s.mae[j] - base.mae[k]; });
+        return { x: s.week, y: y, name: s.label, mode: "lines", line: { color: colors[i % colors.length], dash: dashes[i % dashes.length] }, type: "scatter" };
+      });
+    }
+    var zero = { shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: { color: css("--ref"), dash: "dot" } }] };
+    var ct = gapSeries(D.mechanism.controls, [css("--off"), css("--on"), css("--accent"), css("--warn")], ["solid", "dash", "dot", "dashdot"]);
+    plot("mx-ctrl", ct, Object.assign({ yaxis: { title: { text: "MAE minus reference (min)" } }, margin: { l: 48, t: 10, b: 30 }, legend: { y: -0.35, font: { size: 10 } } }, zero));
     var dose = D.mechanism.dose;
     var dx = {};
     dose.forEach(function (d) { (dx[d.guard ? "on" : "off"] = dx[d.guard ? "on" : "off"] || []).push(d); });
@@ -303,10 +308,8 @@
         line: { color: k === "on" ? css("--on") : css("--off"), dash: k === "on" ? "dash" : "solid" }, type: "scatter" };
     });
     plot("mx-dose", dt, { xaxis: { title: { text: "share of couriers bulk-scanning" }, tickformat: ".0%" }, yaxis: { title: { text: "mean MAE (min)" } }, margin: { l: 48, t: 10, b: 44 }, legend: { y: -0.4 } });
-    var ft = D.mechanism.frozen.map(function (s, i) {
-      return { x: s.week, y: s.mae, name: s.label, mode: "lines", line: { color: [css("--ref"), css("--off"), css("--accent"), css("--bad")][i % 4], dash: i === 0 ? "dot" : "solid" }, type: "scatter" };
-    });
-    plot("mx-frozen", ft, { yaxis: { title: { text: "MAE (min)" } }, margin: { l: 48, t: 10, b: 30 }, legend: { y: -0.35, font: { size: 10 } } });
+    var ft = gapSeries(D.mechanism.frozen, [css("--off"), css("--accent"), css("--bad")], ["solid", "dash", "dot"]);
+    plot("mx-frozen", ft, Object.assign({ yaxis: { title: { text: "MAE minus reference (min)" } }, margin: { l: 48, t: 10, b: 30 }, legend: { y: -0.35, font: { size: 10 } } }, zero));
     $("mx-ctrl-t").textContent = (D.mechText && D.mechText.controls) || "";
     $("mx-dose-t").textContent = (D.mechText && D.mechText.dose) || "";
     $("mx-frozen-t").textContent = (D.mechText && D.mechText.frozen) || "";

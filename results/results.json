@@ -1,6 +1,6 @@
 {
  "config_hash": "e54a0bf568c4",
- "git_sha": "53f4e8b",
+ "git_sha": "4519a95",
  "versions": {
   "python": "3.13.5",
   "lightgbm": "4.7.0",

@@ -229,11 +229,26 @@ def main():
     if "dev" in res:
         res["headline"] = headline(res)
     with open(os.path.join(a.results_dir, "results.json"), "w") as f:
-        json.dump(res, f, indent=1, default=lambda o: None if (isinstance(o, float) and np.isnan(o)) else (o.item() if hasattr(o, "item") else str(o)))
+        json.dump(clean_json(res), f, indent=1, allow_nan=False)
     print("wrote results.json")
     if "dev" in res:
         for r in res["dev"]["scorecard"]:
             print(("PASS " if r["passed"] else "FAIL ") + r["criterion"], json.dumps(r["value"])[:160])
+
+
+def clean_json(o):
+    """NaN/inf -> null and numpy scalars -> Python, so results.json is strict JSON."""
+    if isinstance(o, dict):
+        return {str(k): clean_json(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [clean_json(v) for v in o]
+    if hasattr(o, "item") and not isinstance(o, (str, bytes)):
+        o = o.item()
+    if isinstance(o, float) and not np.isfinite(o):
+        return None
+    if o is None or isinstance(o, (str, int, float, bool)):
+        return o
+    return str(o)
 
 
 def headline(res):

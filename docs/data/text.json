@@ -1,1 +1,12 @@
-{"mechanism":{},"stress":[]}
+{
+ "mechanism": {
+  "low_quality": "The sloppy feed moves every link in week 5, the first week its rows enter training: bulk scans push delivery times to the end of the shift, so training labels run long (median +12.5 min, KS distance up), the model's promises on the fixed probe grid shift up by ~15 min, and promises widen. MAE crosses the noise threshold by week 8 as the bulk-scan rate ramps up. The damage lands mostly on the sloppy couriers' own packages (+40 min MAE) through their inflated history features. With the Guard, the injected share of training weight falls from ~10% to ~1% and every link stays near reference.",
+  "combined": "Stale plus sloppy. Training on all past weeks dilutes the recent sloppy rows, and the frozen feature store stops absorbing their inflated durations in late June, so combined is less damaged than low quality alone. The Guard's first version made it worse by dropping history older than 7 days; keeping stale-but-informative history fixed that (recovery 74% on development weeks).",
+  "stale": "Training rows get older and history features freeze in late June, yet the decision barely moves (+1.1 min): courier and area averages are stable over months, so stale history is still informative. The model shifts on the probe grid (it learned from older weeks) but the errors it causes sit in the multi-day tail.",
+  "unseen": "Held-out only. From week 18, 15% of couriers scan packages delivered at 40-70% of the true time. No burst, no duplicate: the L1 checks cannot see it. Only reputation (peer disagreement) and recency can respond.",
+  "controls": "Low quality, seed 0. Oracle filter (drop exactly the injected rows) and the Guard both sit near zero; random removal of the same number of rows is worse than doing nothing. Which rows you drop matters, not how many.",
+  "dose": "Development weeks, seed 0. Without the Guard, damage grows steadily with the share of couriers bulk-scanning; with it, MAE stays within 2 min of reference even at 60%.",
+  "frozen": "Reference data, seed 0. Frozen features alone cost nothing; a model trained once on weeks 0-3 and never retrained drifts upward. The model has a shelf life; the history it reads, here, does not."
+ },
+ "stress": []
+}
