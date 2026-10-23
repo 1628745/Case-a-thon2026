@@ -136,3 +136,7 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 - **Full week redefined:** data on all 7 days, each day >= 5% of the median daily volume. The first rule (dates inside the file's min-max range) made Chongqing unusable: a handful of stray November/December accept dates pushed the "last full week" into an empty November. Yantai and the sample keep the same split as before.
 - Parity: browser and native agree to 0.3% MAE on Yantai (the Guard-on run differs slightly: LightGBM 4.6 vs 4.7 and float order). No budget was missed, so the Quick budget stays at 150 trees / 31 leaves / 120k rows.
 - The cold-load time (5.9 s) was measured with a fresh browser profile on a fast connection; on a slow connection the ~30 MB download dominates. Progress is shown either way.
+
+## L8: P3
+- **New-city card goes on the lab page, not index.html.** LAB_PLAN constraint 4 allows only the nav link (and key 5) on the narrative page, which takes precedence over P3's "card in #analysis". The card reads `lab_cached_yantai.json` (92% recovered).
+- The sweep always uses the Quick budget and bulk scans + duplicates, whatever the dial says, so it reproduces the study's dose-response design.

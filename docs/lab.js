@@ -651,6 +651,15 @@
       "- Early \"delivered\" scans leave no burst or duplicate trace, so L1 cannot catch them.\n- Promises (P80) aim for 80% coverage; the miss rate shows how close they came on this week.\n- Results depend on the file: other cities, years or couriers can behave differently.\n";
   }
 
+  // ------------------------------------------------------------ new-city card (native Yantai result, aggregates only)
+  fetch("data/lab_cached_yantai.json").then(function (r) { return r.ok ? r.json() : null; }).then(function (c) {
+    if (!c || c.headline.recovery_pct === null) return;
+    var R = runsByKey(c);
+    $("newcity").innerHTML = "<span>Guard settings frozen on Chongqing, applied to Yantai (sloppy couriers 20%):</span><b>" + n0(c.headline.recovery_pct) + "% recovered</b>" +
+      '<span class="note">MAE ' + n1(R.degraded_off.mae) + " → " + n1(R.degraded_on.mae) + " min (reference " + n1(R.reference.mae) + "). Load the Yantai file below to rerun it live.</span>";
+    show("newcity", true);
+  }).catch(function () { /* card is optional */ });
+
   // ------------------------------------------------------------ start
   updateButtons();
   newWorker(); // preload Python as soon as the page opens

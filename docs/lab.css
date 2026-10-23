@@ -12,6 +12,8 @@ body.lab main { max-width: 1240px; }
 
 .lab-hero { padding: 56px 0 28px; max-width: 900px; }
 .lab-hero .takeaway { max-width: 34ch; }
+.newcity { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; background: var(--panel); border-left: 6px solid var(--pass); border-radius: 6px; padding: 10px 16px; margin: 4px 0 6px; font-size: 15px; }
+.newcity b { font-family: var(--display); font-weight: 800; font-size: 30px; color: var(--pass); line-height: 1; }
 .pystatus { font-size: 15px; display: flex; gap: 10px; align-items: center; margin: 18px 0 6px; }
 .pill { display: inline-block; font-size: 13px; font-weight: 700; padding: 1px 10px; border-radius: 999px; background: var(--band); border: 1.5px solid var(--line); }
 .pill.ok { border-color: var(--pass); color: var(--pass); }

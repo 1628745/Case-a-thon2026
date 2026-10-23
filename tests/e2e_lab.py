@@ -226,6 +226,7 @@ def lab_check(ctx, p):
     page.wait_for_function("window.__lab && window.__lab.ready", timeout=180_000)
     REPORT["timings"]["page_python_ready_s"] = time.time() - t
     check("lab: Python loads", True, f"{time.time() - t:.1f} s")
+    check("P3 new-city card", "% recovered" in page.locator("#newcity").inner_text(), page.locator("#newcity").inner_text()[:100])
     page.evaluate("window.__labPrev = null")
 
     # synthetic, default preset
