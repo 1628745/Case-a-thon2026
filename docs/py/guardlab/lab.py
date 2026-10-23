@@ -309,7 +309,8 @@ def run_lab(base, lcfg, split, opt, progress=None, salt="guardlab"):
     stale = "stale" in mechs
     freeze_day = (split["train_weeks"][0] * 7 - 1) if stale else None
     cap = BUDGETS[budget]["row_cap"]
-    keep = cap_couriers(base, split["stale_weeks"] if stale else split["train_weeks"], cap, seed)
+    keep = cap_couriers(base, split["train_weeks"], cap, seed)  # the reference always uses the 4-week window
+    keep_stale = cap_couriers(base, split["stale_weeks"], cap, seed) if stale else keep
     all_c = np.sort(base.courier_id.unique())
     hmap = dict(zip(courier_hash(all_c, salt), all_c.tolist()))
     release = {hmap[h] for h in opt.get("release", []) if h in hmap}
@@ -321,23 +322,23 @@ def run_lab(base, lcfg, split, opt, progress=None, salt="guardlab"):
     timings["inject_s"] = ti.s
     runs, keep_out = [], {}
     if injected:
-        plan = [("reference", "Reference (as uploaded, Guard off)", ref, False, None, False),
-                ("degraded_off", "Poisoned, Guard off", feed, False, freeze_day, stale),
-                ("degraded_on", "Poisoned, Guard on", feed, True, freeze_day, stale)]
+        plan = [("reference", "Reference (as uploaded, Guard off)", ref, False, None, False, keep),
+                ("degraded_off", "Poisoned, Guard off", feed, False, freeze_day, stale, keep_stale),
+                ("degraded_on", "Poisoned, Guard on", feed, True, freeze_day, stale, keep_stale)]
     else:
-        plan = [("clean_off", "As uploaded, Guard off", ref, False, None, False),
-                ("clean_on", "As uploaded, Guard on", ref, True, None, False)]
-    for i, (key, label, f, guard, fz, sw) in enumerate(plan):
+        plan = [("clean_off", "As uploaded, Guard off", ref, False, None, False, keep),
+                ("clean_on", "As uploaded, Guard on", ref, True, None, False, keep)]
+    for i, (key, label, f, guard, fz, sw, kp) in enumerate(plan):
         prog("train_" + key, 18 + 22 * i, f"Building features and training: {label}")
         with Timer() as tr_t:
-            m, k = one_run(key, f, lcfg, g, split, seed, guard, fz, keep, release if guard else None, sw)
+            m, k = one_run(key, f, lcfg, g, split, seed, guard, fz, kp, release if guard else None, sw)
         m["label"] = label
         m["run_s"] = tr_t.s
         runs.append(m)
         keep_out[key] = k
     prog("score", 86, "Scoring and explaining")
     with Timer() as ts:
-        out = _summarize(runs, keep_out, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, salt, release, g)
+        out = _summarize(runs, keep_out, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, keep_stale, salt, release, g)
     timings["score_s"] = ts.s
     timings["total_s"] = time.perf_counter() - t_all
     out["timings"] = timings
@@ -358,6 +359,10 @@ def _verdict(runs, injected):
         elif on > off:
             v = "red"
             s = f"The Guard made things worse here: MAE {on:.1f} min with it, {off:.1f} without (reference {ref:.1f})."
+        elif rec > 1:
+            v = "green"
+            s = (f"The Guard recovered all of the damage and ended below the reference: MAE {off:.1f} -> {on:.1f} min "
+                 f"(reference {ref:.1f}).")
         elif rec >= 0.5:
             v = "green"
             s = f"The Guard recovered {100 * rec:.0f}% of the damage: MAE {off:.1f} -> {on:.1f} min (reference {ref:.1f})."
@@ -377,7 +382,7 @@ def _verdict(runs, injected):
     return {"kind": "clean", "cost_min": cost, "noise_floor_min": floor, "recovery_pct": None, "verdict": v, "sentence": s}
 
 
-def _summarize(runs, k, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, salt, release, g):
+def _summarize(runs, k, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, keep_stale, salt, release, g):
     injected = bool(mechs)
     on_key = "degraded_on" if injected else "clean_on"
     off_key = "degraded_off" if injected else "clean_off"
@@ -431,7 +436,9 @@ def _summarize(runs, k, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, 
                 "sloppy_share": float(lcfg["degrade"]["low_quality"]["sloppy_share"]) if ("bulk" in mechs or "dup" in mechs) else None,
                 "seed": int(opt.get("seed", 0)), "budget": opt.get("budget", "quick"), "n_estimators": lc["n_estimators"],
                 "num_leaves": lc["num_leaves"], "row_cap": BUDGETS[opt.get("budget", "quick")]["row_cap"],
-                "capped": keep is not None, "couriers_kept": None if keep is None else len(keep),
+                "capped": keep is not None or keep_stale is not None,
+                "couriers_kept": None if keep is None else len(keep),
+                "couriers_kept_stale_window": None if keep_stale is None or keep_stale is keep else len(keep_stale),
                 "year": int(lcfg["data"]["year"]), "released": sorted(opt.get("release", [])),
                 "freeze_after": split["train_start"] if "stale" in mechs else None,
                 "ramp": {"bulk_p": [lcfg["degrade"]["low_quality"]["p_start"], lcfg["degrade"]["low_quality"]["p_max"]],

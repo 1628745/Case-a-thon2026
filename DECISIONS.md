@@ -91,3 +91,25 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 - **Row cap (Quick):** whole couriers in a seeded order (`rng([seed, 23])`) until training rows <= 120,000; the same courier set is used in every run of an experiment. History features still use every row.
 - **Timing granularity:** `train_s` is per model pair (P50 + P80; the Guard pair also includes the conformal fit), not per single model.
 - **Courier hashes** are salted SHA-256 (8 hex). The browser uses a random per-session salt, so hashes can't be reversed to small integer ids; the committed cached result uses a secret salt that isn't stored.
+
+## L2: native lab experiment and the result schema
+- `scripts/lab_native.py` runs `src/lab.py` natively; full results go to `logs/lab/` (git-ignored).
+- **Row cap per window:** the reference run is capped over its 4-week window and the stale runs over their all-weeks window (separate seeded courier sets), so the reference is the same in every preset. Consequence on Yantai stale: the capped all-weeks window drops couriers, so ~19% of test packages are deferred as "area not seen in training" (`defer_min_area_rows: 1`). Kept and shown, not tuned.
+- Recovery above 100% is reported as "recovered all of the damage and ended below the reference".
+- **Native Yantai, Quick, seed 0 (MAE min, ref / off / on):** sloppy 95.7 / 136.2 / 98.8 (92% recovered); stale 95.7 / 110.4 / 108.7 (12%); sloppy+stale 95.7 / 116.4 / 109.0 (36%); unseen 95.7 / 101.9 / 103.0 (Guard worse, shown red); clean: Guard costs +1.6 min (95.7 -> 97.4).
+
+### Result schema `guardlab-result/1` (fixed; produced by `src/lab.run_lab`, same in browser and native)
+- `schema`, `source` (`native` | `browser` | `cached`)
+- `settings`: preset, mechanisms [bulk|dup|stale|early], sloppy_share, seed, budget, n_estimators, num_leaves, row_cap, capped, couriers_kept, couriers_kept_stale_window, year, released [courier hashes], freeze_after, ramp {bulk_p, dup_from_week, dup_prob, early_share}
+- `data`: week0_start, test_week, train_weeks, stale_weeks, test_start, train_start, first_full_week, rows_file, rows_used, trimmed_to_last_weeks
+- `runs[]`: key (reference | degraded_off | degraded_on | clean_off | clean_on), label, guard, mae, p90_err, miss_rate, promise_mean, width_mean, defer_rate, n_deferred, mae_served, n_train, eff_n, frac_downweighted, n_test, train_s, run_s, predict_ms_per_pkg, feature_age_days
+- `headline`: kind (injected | clean), gap_min or cost_min, noise_floor_min, recovery_pct (null under the noise floor), verdict (green | neutral | red), sentence
+- `guard`: n_train, flags {nonpos, burst, dup, gps_age, far, any}, quarantined, frac_downweighted, eff_n, deferred, n_test, defer_reasons {hist, gps, area, width}
+- `detector` (null when nothing injected): tp, fp, fn, tn, precision, recall, fpr, injected_train_rows
+- `reputation`: edges, counts, n_couriers, lowest[10] {courier (hash), n, flag_rate, z, rep, sloppy, early, released}, n_sloppy, n_early, sloppy_caught
+- `injection`: {mechanism: rows affected}
+- `explain[]` (<= 5): kind, label, y, features[{name, off, on}], contrib_off[], contrib_on[], base_off, base_on, p50_off, p50_on, p80_off, p80_on, reasons {hist, gps, area, width}, decision
+- `human`: deferred, sec_per_pkg_assumed (45), dispatcher_min, train_s_guard, predict_ms_per_pkg, n_test
+- `quarantine`: columns [file_line, courier, reasons, note], rows
+- `timings`: inject_s, score_s, total_s (+ audit_s, prepare_s, end_to_end_s natively; load/audit/run seconds in the browser)
+- `versions`: python, pandas, numpy, lightgbm, platform; `config` (added by the caller): config_hash, guard_hash, guard
