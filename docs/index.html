@@ -15,12 +15,39 @@
 </script>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-van" viewBox="0 0 48 26">
+    <rect x="1" y="3" width="29" height="15" rx="2.5" style="fill: var(--tote)"/>
+    <path d="M30 7h9.5l6.5 7v5H30z" fill="currentColor"/>
+    <path d="M32 9h6.4l4.3 5H32z" style="fill: var(--panel)"/>
+    <rect x="1" y="16.5" width="45" height="3.5" rx="1.5" fill="currentColor"/>
+    <circle cx="11" cy="21" r="4" fill="currentColor"/><circle cx="11" cy="21" r="1.6" style="fill: var(--panel)"/>
+    <circle cx="37" cy="21" r="4" fill="currentColor"/><circle cx="37" cy="21" r="1.6" style="fill: var(--panel)"/>
+  </symbol>
+  <symbol id="i-scooter" viewBox="0 0 40 30">
+    <rect x="2" y="6" width="13" height="11" rx="1.5" style="fill: var(--tote)"/>
+    <path d="M8.5 6v11" stroke="currentColor" stroke-opacity=".35" stroke-width="1.2"/>
+    <circle cx="23" cy="4" r="3" fill="currentColor"/>
+    <path d="M21.5 8 18.5 17h7l3-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 20.5h22l6-12h3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="8" cy="24.5" r="4" fill="currentColor"/><circle cx="31" cy="24.5" r="4" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-house" viewBox="0 0 24 22">
+    <path d="M2 10 12 2l10 8v11H2z" style="fill: var(--panel)" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <rect x="9.5" y="13" width="5" height="8" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-depot" viewBox="0 0 32 24">
+    <path d="M1 9 16 2l15 7v14H1z" style="fill: var(--panel)" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <rect x="8" y="12" width="16" height="11" fill="currentColor"/>
+    <path d="M8 15.5h16M8 19h16" style="stroke: var(--panel)" stroke-width="1"/>
+  </symbol>
+</svg>
 <a class="skip" href="#poisons">Skip to content</a>
 
 <header class="track" aria-label="Sections">
   <a class="brand" href="#top">Shelf-Life Guard</a>
   <nav class="route" aria-label="Presentation sections">
-    <div class="route-line" aria-hidden="true"><span class="route-fill" id="route-fill"></span></div>
+    <div class="route-line" aria-hidden="true"><span class="route-fill" id="route-fill"></span><svg class="route-van" id="route-van" viewBox="0 0 48 26"><use href="#i-van"/></svg></div>
     <a href="#poisons" class="stop" data-stop="poisons" aria-keyshortcuts="1"><span class="dot" aria-hidden="true"></span>What goes wrong</a>
     <a href="#built" class="stop" data-stop="built" aria-keyshortcuts="2"><span class="dot" aria-hidden="true"></span>What we built</a>
     <a href="#analysis" class="stop" data-stop="analysis" aria-keyshortcuts="3"><span class="dot" aria-hidden="true"></span>Does it work?</a>
@@ -60,11 +87,13 @@
     </div>
     <figcaption id="slip-cap" class="slip-cap">This courier has been marking deliveries in bulk at the end of the day. Without the Guard, those sloppy records push the promise out by <b id="slip-diff">hours</b>.</figcaption>
   </figure>
+  <div class="hero-road" id="hero-road" aria-hidden="true"></div>
 </section>
 
 <!-- 1 WHAT GOES WRONG -->
 <section class="part" id="poisons" aria-labelledby="poisons-h">
   <div class="part-head">
+    <div class="lane" data-lane="scooter" data-n="1" aria-hidden="true"></div>
     <p class="part-n">Part 1 of 3</p>
     <h2 id="poisons-h">What goes wrong with the data</h2>
     <p class="takeaway">Old data wasn't the real problem. Unreliable sources were.</p>
@@ -90,7 +119,7 @@
       <div class="label-stub"><span class="stage s-label">Sloppy scans</span></div>
       <h3>Sloppy scanning</h3>
       <p><span data-v="x.oneIn"></span> couriers stop scanning at the door. They mark a whole stack delivered at the end of the shift, and their device uploads some records twice. To the model, their deliveries look hours slower than they really were.</p>
-      <div class="mini tall" data-anim="sloppy" role="img" aria-label="Animation: top row shows when deliveries really happened, spread through the day. Bottom row shows what the system recorded: most of them piled up at the end of the shift, some recorded twice."></div>
+      <div class="mini street" data-anim="sloppy" role="img" aria-label="Animation, illustrative. A careful courier rides past five houses and records a different delivery time at each door. Then a sloppy courier rides the same street, records nothing at the doors, and at the end of the shift all five records get the same late time, with two duplicate copies."></div>
     </article>
   </div>
 
@@ -119,6 +148,7 @@
 <!-- 2 WHAT WE BUILT -->
 <section class="part" id="built" aria-labelledby="built-h">
   <div class="part-head">
+    <div class="lane" data-lane="van" data-n="2" aria-hidden="true"></div>
     <p class="part-n">Part 2 of 3</p>
     <h2 id="built-h">What we built: the Guard</h2>
     <p class="takeaway">Three checks, placed where bad data gets in.</p>
@@ -213,6 +243,7 @@
 <!-- 3 DOES IT WORK -->
 <section class="part" id="analysis" aria-labelledby="analysis-h">
   <div class="part-head">
+    <div class="lane" data-lane="van" data-n="3" aria-hidden="true"></div>
     <p class="part-n">Part 3 of 3</p>
     <h2 id="analysis-h">Does it work?</h2>
     <p class="takeaway">Yes. It undoes most of the damage and costs almost nothing when the data is clean.</p>

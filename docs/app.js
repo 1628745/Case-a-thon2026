@@ -132,7 +132,7 @@
 
   // ------------------------------------------------------------ nav: tracking bar
   function initNav() {
-    var ids = ["poisons", "built", "analysis"], stops = document.querySelectorAll(".stop"), fillEl = $("route-fill");
+    var ids = ["poisons", "built", "analysis"], stops = document.querySelectorAll(".stop"), fillEl = $("route-fill"), van = $("route-van");
     function update() {
       var mid = window.innerHeight * 0.4, tops = ids.map(function (id) { return $(id).getBoundingClientRect().top; });
       var anaBottom = $("analysis").getBoundingClientRect().bottom;
@@ -143,7 +143,9 @@
       else if (active < 2) p = (active + Math.min(1, (mid - tops[active]) / (tops[active + 1] - tops[active]))) / 2;
       else p = 1;
       if (anaBottom < mid) active = 2;
-      fillEl.style.width = (100 * Math.max(0, Math.min(1, p))) + "%";
+      p = Math.max(0, Math.min(1, p));
+      fillEl.style.width = (100 * p) + "%";
+      if (van) van.style.transform = "translateX(" + (p * van.parentNode.clientWidth - van.clientWidth / 2) + "px)";
       stops.forEach(function (s, i) {
         s.classList.toggle("active", i === active);
         s.classList.toggle("passed", i < active);
@@ -329,6 +331,7 @@
   }
   function ease(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
   var T = "font: 12px var(--body); fill: var(--muted)";
+  function use(parent, id, x, y, w, h, style) { return mk("use", { href: "#" + id, x: x, y: y, width: w, height: h, style: style || "color: var(--ink)" }, parent); }
   var TB = "font: 600 12px var(--body); fill: var(--ink)";
 
   var POISON = {
@@ -379,56 +382,66 @@
       return function (done) { ticks.innerHTML = ""; drawn = 0; tween(4500, function (p) { at(Math.round(p * (nDays - 1))); }, done); };
     },
     sloppy: function (svg) {
-      var c = V.cfg.degrade.low_quality, W = 340, x0 = 6, x1 = W - 6;
-      var X = function (h) { return x0 + (h - 8) / 12 * (x1 - x0); };
-      var times = [9.1, 9.8, 10.4, 11.2, 12.0, 13.1, 13.9, 14.8, 15.6, 16.5, 17.3, 18.2];
-      var endT = times[times.length - 1], n = times.length;
-      var LB = "font: 600 12px var(--body); fill: var(--ink)";
-      mk("text", { x: 0, y: 11, style: LB, text: "When deliveries really happened" }, svg);
-      mk("line", { x1: x0, x2: x1, y1: 34, y2: 34, style: "stroke: var(--line); stroke-width: 2" }, svg);
-      times.forEach(function (t) { mk("rect", { x: X(t) - 3, y: 19, width: 6, height: 14, rx: 1.5, style: "fill: var(--ref)" }, svg); });
-      mk("text", { x: 0, y: 60, style: LB, text: "What the system recorded" }, svg);
-      mk("line", { x1: x0, x2: x1, y1: 104, y2: 104, style: "stroke: var(--line); stroke-width: 2" }, svg);
-      mk("line", { x1: X(endT), x2: X(endT), y1: 16, y2: 106, style: "stroke: var(--lq); stroke-dasharray: 3 3" }, svg);
-      mk("text", { x: x1, y: 11, "text-anchor": "end", style: "font: 600 11px var(--body); fill: var(--lq)", text: "end of shift ┆" }, svg);
-      [8, 12, 16, 20].forEach(function (h) { mk("text", { x: X(h), y: 120, "text-anchor": h === 8 ? "start" : h === 20 ? "end" : "middle", style: T, text: (h < 10 ? "0" : "") + h + ":00" }, svg); });
-      var dups = mk("g", {}, svg);
-      var ticks = times.map(function (t) { return mk("rect", { x: X(t) - 3, y: 89, width: 6, height: 14, rx: 1.5, style: "fill: var(--ref)" }, svg); });
-      var lab = mk("text", { x: 0, y: 138, style: "font: 600 12px var(--body); fill: var(--lq)" }, svg);
-      var order = [3, 7, 1, 10, 5, 0, 8, 2, 6, 4, 9];
-      function place(k, p) {
-        var slot = 0;
-        times.forEach(function (t, i) {
-          var hit = order.indexOf(i) >= 0 && order.indexOf(i) < k;
-          if (!hit) { ticks[i].setAttribute("x", X(t) - 3); ticks[i].setAttribute("y", 89); ticks[i].style.fill = "var(--ref)"; return; }
-          var s0 = slot++, tx = X(endT) - 3 - 7 * (s0 % 4 + 1), ty = 89 - 15 * Math.floor(s0 / 4) * 0.0;
-          ticks[i].setAttribute("x", X(t) - 3 + (tx - X(t) + 3) * p);
-          ticks[i].setAttribute("y", 89 - (Math.floor(s0 / 4) * 15) * p);
-          ticks[i].style.fill = p > 0.5 ? "var(--lq)" : "var(--ref)";
-        });
+      var xs = [44, 104, 164, 224, 284], care = ["09:40", "10:55", "12:10", "13:30", "14:45"], late = "18:10";
+      var title = mk("text", { x: 0, y: 13, style: "font: 700 13px var(--body); fill: var(--ink)" }, svg);
+      xs.forEach(function (x) { use(svg, "i-house", x - 14, 20, 28, 26); });
+      use(svg, "i-depot", 306, 18, 34, 28, "color: var(--muted)");
+      mk("rect", { x: 0, y: 50, width: 340, height: 14, rx: 3, style: "fill: var(--line)" }, svg);
+      mk("line", { x1: 4, x2: 336, y1: 57, y2: 57, style: "stroke: var(--panel); stroke-width: 1.5; stroke-dasharray: 6 6" }, svg);
+      mk("text", { x: 0, y: 84, style: T, text: "Recorded delivery time" }, svg);
+      var cells = xs.map(function (x) {
+        var r = mk("rect", { x: x - 26, y: 90, width: 52, height: 22, rx: 4, style: "fill: var(--floor); stroke: var(--line); stroke-width: 1.5" }, svg);
+        var t = mk("text", { x: x, y: 105.5, "text-anchor": "middle", style: "font: 700 12px var(--body); fill: var(--muted)", text: "–" }, svg);
+        return { r: r, t: t };
+      });
+      var copies = mk("g", {}, svg);
+      var scooter = use(svg, "i-scooter", 0, 0, 40, 30);
+      var cap1 = mk("text", { x: 0, y: 158, style: "font: 600 12px var(--body); fill: var(--ink)" }, svg);
+      var cap2 = mk("text", { x: 0, y: 174, style: "font: 12px var(--body); fill: var(--muted)" }, svg);
+      function ride(x) { scooter.setAttribute("transform", "translate(" + (x - 20) + ",27)"); }
+      function stamp(i, txt, color) { cells[i].t.textContent = txt; cells[i].t.style.fill = color; cells[i].r.style.stroke = color; }
+      function reset(label) {
+        title.textContent = label; copies.innerHTML = ""; cap1.textContent = ""; cap2.textContent = "";
+        cells.forEach(function (c, i) { stamp(i, "–", "var(--muted)"); c.r.style.stroke = "var(--line)"; });
+        ride(-20);
       }
-      var kStart = Math.max(1, Math.round(c.p_start * (n - 1))), kMax = Math.round(c.p_max * (n - 1));
-      return function (done) {
-        dups.innerHTML = ""; place(0, 0);
-        lab.textContent = "Early on: " + fmt(c.p_start, "pct0") + " of a sloppy courier's packages logged late";
-        tween(1300, function (p) { place(kStart, ease(p)); }, function () {
-          lab.textContent = "Later: " + fmt(c.p_max, "pct0") + " logged at end of shift, plus duplicates";
-          tween(1800, function (p) { place(kMax, ease(p)); }, function () {
-            [0, 4, 8].forEach(function (k) {
-              var b = ticks[order[k]];
-              mk("rect", { x: +b.getAttribute("x") - 1, y: +b.getAttribute("y") - 3, width: 6, height: 14, rx: 1.5, style: "fill: none; stroke: var(--lq); stroke-width: 1.5" }, dups);
-            });
-            mk("text", { x: X(endT) - 3 - 7 * 4 - 8, y: 86, "text-anchor": "end", style: "font: 700 11px var(--body); fill: var(--lq)", text: "piled up, some ×2" }, dups);
-            if (done) done();
+      function drive(careful, done) {
+        var i = 0;
+        (function next() {
+          if (i >= xs.length) { tween(600, function (p) { ride(xs[4] + (326 - xs[4]) * ease(p)); }, done); return; }
+          var from = i === 0 ? -20 : xs[i - 1], to = xs[i];
+          tween(560, function (p) { ride(from + (to - from) * ease(p)); }, function () {
+            if (careful) stamp(i, care[i], "var(--ref)"); else stamp(i, "not yet", "var(--muted)");
+            i++; setTimeout(next, 170);
           });
+        })();
+      }
+      function endOfShift() {
+        xs.forEach(function (x, i) { stamp(i, late, "var(--lq)"); });
+        [1, 3].forEach(function (i) {
+          mk("rect", { x: xs[i] - 26, y: 117, width: 52, height: 20, rx: 4, style: "fill: none; stroke: var(--lq); stroke-width: 1.5; stroke-dasharray: 3 2" }, copies);
+          mk("text", { x: xs[i], y: 131, "text-anchor": "middle", style: "font: 700 11px var(--body); fill: var(--lq)", text: "copy " + late }, copies);
+        });
+        cap1.textContent = "Every record says " + late + ", and some show up twice.";
+        cap2.textContent = "To the model, each delivery looks hours slower.";
+      }
+      return function (done) {
+        if (RM) { reset("Sloppy courier: scans it all at the end of the shift"); ride(326); endOfShift(); if (done) done(); return; }
+        reset("Careful courier: scans at each door");
+        drive(true, function () {
+          cap1.textContent = "Five deliveries, five real times.";
+          setTimeout(function () {
+            reset("Sloppy courier: scans nothing until the end of the shift");
+            drive(false, function () { endOfShift(); if (done) done(); });
+          }, 1400);
         });
       };
     }
   };
   function initPoisons() {
     document.querySelectorAll(".mini[data-anim]").forEach(function (el) {
-      var tall = el.classList.contains("tall");
-      var svg = mk("svg", { viewBox: tall ? "0 0 340 145" : "0 0 340 120", "aria-hidden": "true", preserveAspectRatio: "xMinYMid meet" });
+      var street = el.classList.contains("street");
+      var svg = mk("svg", { viewBox: street ? "0 0 340 180" : "0 0 340 120", "aria-hidden": "true", preserveAspectRatio: "xMinYMid meet" });
       el.appendChild(svg);
       var play = POISON[el.getAttribute("data-anim")](svg, el), busy = false;
       function run() { if (busy) return; busy = true; play(function () { busy = false; }); }
@@ -448,6 +461,40 @@
       return { name: CNAME[c], color: CVAR[c], x: cat, y: order.map(function (w) { var r = sl.filter(function (s) { return s.condition === c && s.window_weeks === w; })[0]; return r ? r.mae : null; }) };
     });
     lineChart($("ch-shelf"), series, { cat: cat, yLabel: "average error (min per package)", xLabel: "weeks of history the model learns from", yFmt: "f0", tipFmt: "f1", dots: true, endLabels: true, tipX: "window ", margin: { r: 90 } });
+  }
+
+  function initRoads() {
+    var hr = $("hero-road");
+    function easeOut(p) { return 1 - Math.pow(1 - p, 3); }
+    if (hr) {
+      var svg = mk("svg", { viewBox: "0 0 1200 70", preserveAspectRatio: "xMidYMid meet" }, hr);
+      mk("rect", { x: 30, y: 50, width: 1140, height: 12, rx: 6, style: "fill: var(--line)" }, svg);
+      mk("line", { x1: 44, x2: 1156, y1: 56, y2: 56, style: "stroke: var(--floor); stroke-width: 2; stroke-dasharray: 14 12" }, svg);
+      use(svg, "i-depot", 0, 18, 46, 35, "color: var(--muted)");
+      use(svg, "i-house", 1152, 20, 38, 35);
+      var pin = mk("g", { transform: "translate(1171,10)" }, svg);
+      var tag = mk("g", { class: "pop" }, pin);
+      mk("rect", { x: -40, y: -9, width: 80, height: 20, rx: 10, style: "fill: var(--pass)" }, tag);
+      mk("text", { x: 0, y: 5, "text-anchor": "middle", style: "font: 700 12px var(--body); fill: var(--floor)", text: "Delivered" }, tag);
+      var van = use(svg, "i-van", 0, 0, 58, 31);
+      var x0 = 52, x1 = 1088;
+      function at(x) { van.setAttribute("transform", "translate(" + x + ",24)"); }
+      if (RM) { at(x1); tag.classList.add("in"); }
+      else { at(x0); onView(hr, function () { tween(2800, function (p) { at(x0 + (x1 - x0) * easeOut(p)); }, function () { tag.classList.add("in"); }); }); }
+    }
+    document.querySelectorAll(".lane").forEach(function (el) {
+      var kind = el.getAttribute("data-lane"), isVan = kind === "van";
+      var svg = mk("svg", { viewBox: "0 0 600 46" }, el);
+      mk("rect", { x: 0, y: 38, width: 560, height: 6, rx: 3, style: "fill: var(--line)" }, svg);
+      mk("circle", { cx: 580, cy: 26, r: 15, style: "fill: var(--tote)" }, svg);
+      mk("text", { x: 580, y: 32, "text-anchor": "middle", style: "font: 800 17px var(--display); fill: #1B2B3A", text: el.getAttribute("data-n") }, svg);
+      var w = isVan ? 54 : 42, h = isVan ? 29 : 31, y = 40 - h, x0 = -w, x1 = 552 - w;
+      var v = use(svg, isVan ? "i-van" : "i-scooter", 0, 0, w, h);
+      function at(x) { v.setAttribute("transform", "translate(" + x + "," + y + ")"); }
+      if (RM) { at(x1); return; }
+      at(x0);
+      onView(el, function () { tween(1600, function (p) { at(x0 + (x1 - x0) * easeOut(p)); }); }, "0px 0px -20% 0px");
+    });
   }
 
   // ------------------------------------------------------------ 2 sorting line (signature)
@@ -487,16 +534,17 @@
     var toks = [], acc1 = 0, acc2 = 0, spawn1 = 0, spawn2 = 0, last = null, running = false, paused = false, inView = false, pulse = 0;
     var modelRect = model.querySelector("rect");
     function addTok(lane) {
-      var t = { lane: lane, x: 120, y: lane === 1 ? Y1 : Y2, r: 7, el: mk("rect", { class: "tok", width: 14, height: 11, rx: 2 }, layer) };
-      if (lane === 1) { acc1 += injRate; t.bad = acc1 >= 1; if (t.bad) acc1 -= 1; t.el.style.fill = t.bad ? "var(--lq)" : "var(--ref)"; }
-      else { acc2 += defRate; t.defer = acc2 >= 1; if (t.defer) acc2 -= 1; t.el.style.fill = "var(--ink)"; }
+      var g = mk("g", { class: "tok" }, layer);
+      var t = { lane: lane, x: 120, y: lane === 1 ? Y1 : Y2, el: g, body: mk("rect", { x: -7, y: -5.5, width: 14, height: 11, rx: 2 }, g) };
+      mk("path", { d: "M0 -5.5V5.5M-7 -1.5h14", class: "tape" }, g);
+      if (lane === 1) { acc1 += injRate; t.bad = acc1 >= 1; if (t.bad) acc1 -= 1; t.body.style.fill = t.bad ? "var(--lq)" : "var(--ref)"; }
+      else { acc2 += defRate; t.defer = acc2 >= 1; if (t.defer) acc2 -= 1; t.body.style.fill = "var(--ink)"; }
       toks.push(t);
       return t;
     }
     function draw(t) {
       var s = t.s === undefined ? 1 : t.s;
-      t.el.setAttribute("x", t.x - 7 * s); t.el.setAttribute("y", t.y - 5.5 * s);
-      t.el.setAttribute("width", 14 * s); t.el.setAttribute("height", 11 * s);
+      t.el.setAttribute("transform", "translate(" + t.x.toFixed(1) + "," + t.y.toFixed(1) + ") scale(" + s + ")");
       t.el.style.opacity = t.o === undefined ? 1 : t.o;
     }
     function step(dt) {
@@ -507,12 +555,12 @@
       toks.forEach(function (t) {
         t.x += v * dt;
         if (t.lane === 1) {
-          if (t.bad && t.x > L1X) { t.s = 0.45; t.el.style.fill = "transparent"; t.el.style.stroke = "var(--lq)"; t.el.style.strokeWidth = 2; }
+          if (t.bad && t.x > L1X) { t.s = 0.45; t.body.style.fill = "transparent"; t.body.style.stroke = "var(--lq)"; t.body.style.strokeWidth = 3; }
           if (t.x > L2X && t.bad) t.o = 0.55;
           if (t.x > MX0 + 6) { t.dead = true; pulse = 1; }
         } else {
           if (t.x > MX0 + 6 && t.x < MX1) { t.o = 0; }
-          if (t.x >= MX1) { t.o = 1; t.el.style.fill = t.defer ? "var(--tote)" : "var(--ref)"; }
+          if (t.x >= MX1) { t.o = 1; t.body.style.fill = t.defer ? "var(--tote)" : "var(--ref)"; }
           if (t.x > L3X) { var p = (t.x - L3X) / (930 - L3X); t.y = Y2 + (t.defer ? 55 : -65) * Math.min(1, p); }
           if (t.x > 935) t.dead = true;
         }
@@ -619,6 +667,7 @@
     $("w-promise").innerHTML =
       "<div class='pr on'><span class='k'>With the Guard</span><span class='big'>" + esc(hm(b.p80)) + "</span><span class='s'>arrives by " + esc(clock(md, b.p80)) + " (picked up " + esc(clock(md, 0)) + ")</span></div>" +
       "<div class='pr off'><span class='k'>Without the Guard</span><span class='mid'>" + esc(hm(a.p80)) + "</span><span class='s'>arrives by " + esc(clock(md, a.p80)) + "</span></div>";
+    promiseTimeline(a, b);
     var reasons = b.rules.filter(function (r) { return r.fired; });
     $("w-decision").innerHTML = b.defer
       ? "<div class='verdict defer'>Not sent automatically. A dispatcher decides.</div>"
@@ -652,6 +701,28 @@
     renderScale();
   }
 
+  function promiseTimeline(a, b) {
+    var W = 300, mx = Math.max(a.p80, b.p80) * 1.1, step = mx > 720 ? 120 : 60;
+    function X(m) { return 16 + (W - 32) * m / mx; }
+    var lanes = [[b.p80, 26, "var(--tote)", "with the Guard"], [a.p80, 60, "var(--lq)", "without"]];
+    var g = "<svg class='ptl' viewBox='0 0 300 96' role='img' aria-label='Promise length: with the Guard " + esc(hm(b.p80)) + ", without " + esc(hm(a.p80)) + "'>";
+    for (var m = 0; m <= mx; m += step) g += "<text x='" + X(m).toFixed(1) + "' y='92' text-anchor='middle' class='ptl-t'>" + (m / 60) + " h</text>";
+    g += "<line x1='16' x2='284' y1='80' y2='80' class='ptl-ax'/>";
+    lanes.forEach(function (l) {
+      g += "<rect class='ptl-road' x='16' y='" + (l[1] + 2) + "' height='6' rx='3' width='" + (X(l[0]) - 16).toFixed(1) + "' style='fill:" + l[2] + "'/>" +
+        "<use href='#i-van' class='ptl-van' width='34' height='18' x='0' y='" + (l[1] - 14) + "' data-x='" + (X(l[0]) - 34).toFixed(1) + "'/>" +
+        "<text class='ptl-l' x='" + Math.max(52, X(l[0]) - 38).toFixed(1) + "' y='" + (l[1] - 2) + "' text-anchor='end'>" + esc(l[3]) + "</text>";
+    });
+    $("w-promise").insertAdjacentHTML("beforeend", g + "</svg>");
+    var vans = $("w-promise").querySelectorAll(".ptl-van"), roads = $("w-promise").querySelectorAll(".ptl-road");
+    vans.forEach(function (v) { v.style.transform = "translate(" + (RM ? v.getAttribute("data-x") : 16) + "px,0px)"; });
+    if (RM) return;
+    roads.forEach(function (r) { r.style.transform = "scaleX(0)"; });
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      vans.forEach(function (v) { v.classList.add("go"); v.style.transform = "translate(" + v.getAttribute("data-x") + "px,0px)"; });
+      roads.forEach(function (r) { r.classList.add("go"); r.style.transform = "scaleX(1)"; });
+    }); });
+  }
   function renderScale() {
     var on = V.final.cells.combined.on, tl = track("reference", false), h0 = V.cfg.splits.heldout[0];
     var wk = tl.week.map(function (w, i) { return [w, tl.n_test[i]]; }).filter(function (p) { return p[0] >= h0; });
@@ -832,7 +903,7 @@
       if (id !== "top") { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
     });
   }
-  initTheme(); initNav(); initKeys();
+  initTheme(); initNav(); initKeys(); initRoads();
   // results.json (a copy of results/results.json) is the source of every result; summary.json only adds the build time
   Promise.all(["results", "timeline", "mechanism", "console", "manifest", "modlog", "text", "summary"].map(function (n) {
     return getJSON("data/" + n + ".json").catch(function (e) { if (n === "text" || n === "summary") return {}; throw e; });
