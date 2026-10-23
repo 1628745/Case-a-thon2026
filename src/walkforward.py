@@ -51,15 +51,21 @@ def build_run_feed(base, spec, cfg):
     if stale_feats:
         freeze_day = (pd.Timestamp(cfg["degrade"]["stale"]["freeze_data_through"]) -
                       pd.Timestamp(cfg["data"]["week0_start"])).days
-    if spec["guard"]:
+    return attach_features(feed, cfg, merged_guard_cfg(cfg, spec) if spec["guard"] else None, freeze_day), modlog
+
+
+def attach_features(feed, cfg, gcfg, freeze_day):
+    """Dynamic features from `feed` itself (gcfg = Guard config: the guarded feature store; None = plain)
+    and the training label from its scans."""
+    if gcfg is not None:
         from src.guard import guard_feature_store
-        dyn = guard_feature_store(feed, cfg, merged_guard_cfg(cfg, spec), freeze_day)
+        dyn = guard_feature_store(feed, cfg, gcfg, freeze_day)
     else:
         dyn = add_dynamic_features(feed, cfg, freeze_day=freeze_day)
     feed = feed.drop(columns=[c for c in dyn.columns if c in feed.columns])
     feed = pd.concat([feed, dyn], axis=1)
     feed["label"] = (feed.delivery_time - feed.accept_time).dt.total_seconds() / 60
-    return feed, modlog
+    return feed
 
 
 def window_weeks(spec, t, cfg):

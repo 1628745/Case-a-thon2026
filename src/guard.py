@@ -59,11 +59,14 @@ def courier_reputation(tr, flag, g):
     return pd.DataFrame({"rep": rep, "z": z, "flag_rate": stats.flag_rate, "n": stats.n})
 
 
-def training_weights(tr, t, flags_any, g):
+def training_weights(tr, t, flags_any, g, release=None):
+    """release: courier ids a dispatcher has cleared (reputation := 1; their L1 flags still apply)."""
     c = g["l2"]
     h = c["half_life_weeks"]
     rec = np.ones(len(tr)) if h is None else 0.5 ** (tr.age_weeks.to_numpy() / h)
     rep = courier_reputation(tr, flags_any, g)
+    if release:
+        rep.loc[rep.index.isin(list(release)), "rep"] = 1.0
     r = tr.courier_id.map(rep.rep).to_numpy()
     lam = c["reputation_lambda"]
     r_eff = 1 - lam * (1 - r)
@@ -95,12 +98,12 @@ def weighted_quantile(x, w, q):
     return float(x[min(len(x) - 1, np.searchsorted(cw, q * cw[-1]))])
 
 
-def apply_guard(tr, te, t, cfg, g, seed, threads):
+def apply_guard(tr, te, t, cfg, g, seed, threads, release=None):
     flags = l1_flags(tr, g)
     fany = flags["any"].to_numpy()
     tr = null_stale_history(tr, g)
     te = null_stale_history(te, g)
-    w, rep, rec = training_weights(tr, t, fany, g)
+    w, rep, rec = training_weights(tr, t, fany, g, release)
     tr = tr.assign(w=w, w_rec=rec)
     X = tr[FEATURES].to_numpy(np.float32)
     y = tr.label.to_numpy()

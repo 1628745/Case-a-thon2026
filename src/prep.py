@@ -23,8 +23,12 @@ FEATURES = STATIC + DYNAMIC
 
 
 def load_clean(path, cfg):
+    return clean_frame(pd.read_csv(path), cfg)
+
+
+def clean_frame(raw, cfg, src_row=False):
+    """Raw LaDe columns -> processed frame. src_row=True keeps raw's index (row in the source file)."""
     d = cfg["data"]
-    raw = pd.read_csv(path)
     at = parse_times(raw["accept_time"], d["year"])
     dt = parse_times(raw["delivery_time"], d["year"])
     gt = parse_times(raw["accept_gps_time"], d["year"])
@@ -39,6 +43,8 @@ def load_clean(path, cfg):
         "gps_age_min": (at - gt).dt.total_seconds() / 60,
         "dist_km": haversine_km(raw["accept_gps_lng"], raw["accept_gps_lat"], raw["lng"], raw["lat"]),
     })
+    if src_row:
+        df["src_row"] = raw.index.to_numpy(np.int64)
     n0 = len(df)
     df = df[df.accept_time.notna() & df.delivery_time.notna()]
     df = df[(df.delivery_time - df.accept_time).dt.total_seconds() > 0]

@@ -82,3 +82,12 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 
 ## L0
 - Branch `live-demo` from `main` at 0a2bb7a. The modified CLAUDE.md and the new LAB_*.md files (written by the user before the run) are committed on this branch as the first commit.
+
+## L1: importable core and the browser package
+- **Refactors in `src/` (behaviour unchanged, phase-1 tests pass):** `common.py` imports `yaml`/`subprocess` lazily; `prep.load_clean` = `pd.read_csv` + new `clean_frame(raw, cfg, src_row=False)`; `audit.audit` = file info + new `audit_frame(raw, cfg)` (`ds` and delivery-GPS columns optional); `walkforward.build_run_feed` tail extracted as `attach_features(feed, cfg, gcfg, freeze_day)`; `guard.training_weights`/`apply_guard` take an optional `release` set (dispatcher override: reputation := 1, L1 flags kept). Default `release=None` changes nothing.
+- **Lab orchestration lives in `src/lab.py`** (single source of truth) and is copied with the core into `docs/py/guardlab/` by `scripts/build_lab.py` (only rewrite: `from src.x import` -> `from .x import`). `tests/test_lab_parity.py` fails if the copies are stale.
+- **Window mapping:** sloppy/early couriers are drawn from couriers active before the test week (`splits.warmup = [0, T-1]`), not from a warm-up month, because a 6-week file has no separate warm-up. Bulk-scan ramp: `start_week = T-4`, `p_span_weeks = 3` (0.10 at T-4 -> 0.90 at T-1, cap 0.90; the test week's own scans also stay at 0.90 as in the study, but test labels are never touched). Duplicates from `T-2`, prob 0.8. Early scans from `T-4`, 15% of couriers, disjoint from sloppy ones.
+- **Stale preset = both halves of the study's stale condition:** history features frozen at the start of the training window, *and* training on every full week before the test week with equal weight (the study's "all weeks" window). Alternative (frozen features only, 4-week window) rejected because the study found frozen features alone cost almost nothing.
+- **Row cap (Quick):** whole couriers in a seeded order (`rng([seed, 23])`) until training rows <= 120,000; the same courier set is used in every run of an experiment. History features still use every row.
+- **Timing granularity:** `train_s` is per model pair (P50 + P80; the Guard pair also includes the conformal fit), not per single model.
+- **Courier hashes** are salted SHA-256 (8 hex). The browser uses a random per-session salt, so hashes can't be reversed to small integer ids; the committed cached result uses a secret salt that isn't stored.

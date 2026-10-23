@@ -1,27 +1,28 @@
 """Shared helpers: config, hashing, time parsing, week assignment."""
 import hashlib
 import os
-import subprocess
 
 import numpy as np
 import pandas as pd
-import yaml
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def load_config(path=None):
+    import yaml  # imported lazily: the browser build (docs/py/guardlab) has no yaml
     path = path or os.path.join(ROOT, "config.yaml")
     with open(path) as f:
         return yaml.safe_load(f)
 
 
 def config_hash(cfg):
+    import yaml
     blob = yaml.safe_dump(cfg, sort_keys=True).encode()
     return hashlib.sha256(blob).hexdigest()[:12]
 
 
 def git_sha():
+    import subprocess
     env = dict(os.environ, DEVELOPER_DIR="/Library/Developer/CommandLineTools")
     try:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,

@@ -22,10 +22,17 @@ def sha256(path):
 
 
 def audit(path, cfg):
-    d = cfg["data"]
     raw = pd.read_csv(path)
-    out = {"file": os.path.relpath(path, ROOT), "bytes": os.path.getsize(path), "sha256": sha256(path),
-           "rows_raw": int(len(raw)), "columns": list(raw.columns)}
+    out = {"file": os.path.relpath(path, ROOT), "bytes": os.path.getsize(path), "sha256": sha256(path)}
+    out.update(audit_frame(raw, cfg))
+    return out
+
+
+def audit_frame(raw, cfg):
+    """Format, coverage and observed issues of a raw frame (no file I/O). `ds` and delivery GPS
+    columns are optional."""
+    d = cfg["data"]
+    out = {"rows_raw": int(len(raw)), "columns": list(raw.columns)}
     out["time_format_examples"] = raw["accept_time"].head(3).tolist()
     out["time_string_lengths"] = {str(k): int(v) for k, v in raw["accept_time"].astype(str).str.len().value_counts().items()}
     at = parse_times(raw["accept_time"], d["year"])
@@ -35,7 +42,8 @@ def audit(path, cfg):
     out["unparseable_delivery"] = int(dt.isna().sum())
     # ds column = accept date as MMDD?
     ds_from_accept = at.dt.month * 100 + at.dt.day
-    out["ds_matches_accept_date_share"] = float((ds_from_accept == raw["ds"]).mean())
+    if "ds" in raw:
+        out["ds_matches_accept_date_share"] = float((ds_from_accept == raw["ds"]).mean())
     out["date_range_accept"] = [str(at.min()), str(at.max())]
     out["date_range_delivery"] = [str(dt.min()), str(dt.max())]
     dur = (dt - at).dt.total_seconds() / 60
@@ -55,7 +63,8 @@ def audit(path, cfg):
         "duration_gt_24h": int((dur > 1440).sum()),
         "same_minute_burst_ge5_rows": int((burst_size >= 5).sum()),
         "missing_accept_gps": int(raw[["accept_gps_lng", "accept_gps_lat"]].isna().any(axis=1).sum()),
-        "missing_delivery_gps": int(raw[["delivery_gps_lng", "delivery_gps_lat"]].isna().any(axis=1).sum()),
+        "missing_delivery_gps": (int(raw[["delivery_gps_lng", "delivery_gps_lat"]].isna().any(axis=1).sum())
+                                 if {"delivery_gps_lng", "delivery_gps_lat"} <= set(raw.columns) else None),
         "gps_fix_age_gt_30min": int((gps_age > 30).sum()),
         "gps_fix_age_negative": int((gps_age < 0).sum()),
         "gps_fix_age_quantiles_min": {str(q): float(gps_age.quantile(q)) for q in [0.5, 0.9, 0.99, 0.999]},
