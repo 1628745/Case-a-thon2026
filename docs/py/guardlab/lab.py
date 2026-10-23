@@ -361,14 +361,14 @@ def _verdict(runs, injected):
             s = f"The Guard made things worse here: MAE {on:.1f} min with it, {off:.1f} without (reference {ref:.1f})."
         elif rec > 1:
             v = "green"
-            s = (f"The Guard recovered all of the damage and ended below the reference: MAE {off:.1f} -> {on:.1f} min "
+            s = (f"The Guard recovered all of the damage and ended below the reference: MAE {off:.1f} → {on:.1f} min "
                  f"(reference {ref:.1f}).")
         elif rec >= 0.5:
             v = "green"
-            s = f"The Guard recovered {100 * rec:.0f}% of the damage: MAE {off:.1f} -> {on:.1f} min (reference {ref:.1f})."
+            s = f"The Guard recovered {100 * rec:.0f}% of the damage: MAE {off:.1f} → {on:.1f} min (reference {ref:.1f})."
         else:
             v = "neutral"
-            s = f"The Guard recovered only {100 * rec:.0f}% of the damage: MAE {off:.1f} -> {on:.1f} min (reference {ref:.1f})."
+            s = f"The Guard recovered only {100 * rec:.0f}% of the damage: MAE {off:.1f} → {on:.1f} min (reference {ref:.1f})."
         return {"kind": "injected", "gap_min": gap, "noise_floor_min": floor,
                 "recovery_pct": None if rec is None else 100 * rec, "verdict": v, "sentence": s}
     off, on = r["clean_off"]["mae"], r["clean_on"]["mae"]
@@ -376,9 +376,9 @@ def _verdict(runs, injected):
     if cost < -floor:
         v, s = "green", f"On your data as uploaded the Guard lowered MAE from {off:.1f} to {on:.1f} min, by cleaning issues already in the file."
     elif cost <= floor:
-        v, s = "neutral", f"Nothing much to fix: the Guard's cost on your data is {cost:+.1f} min MAE ({off:.1f} -> {on:.1f})."
+        v, s = "neutral", f"Nothing much to fix: the Guard's cost on your data is {cost:+.1f} min MAE ({off:.1f} → {on:.1f})."
     else:
-        v, s = "red", f"The Guard costs {cost:+.1f} min MAE on your data as uploaded ({off:.1f} -> {on:.1f})."
+        v, s = "red", f"The Guard costs {cost:+.1f} min MAE on your data as uploaded ({off:.1f} → {on:.1f})."
     return {"kind": "clean", "cost_min": cost, "noise_floor_min": floor, "recovery_pct": None, "verdict": v, "sentence": s}
 
 

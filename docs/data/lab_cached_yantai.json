@@ -1,0 +1,1140 @@
+{
+ "schema": "guardlab-result/1",
+ "settings": {
+  "preset": "sloppy",
+  "mechanisms": [
+   "bulk",
+   "dup"
+  ],
+  "sloppy_share": 0.2,
+  "seed": 0,
+  "budget": "quick",
+  "n_estimators": 150,
+  "num_leaves": 31,
+  "row_cap": 120000,
+  "capped": false,
+  "couriers_kept": null,
+  "couriers_kept_stale_window": null,
+  "year": 2022,
+  "released": [],
+  "freeze_after": null,
+  "ramp": {
+   "bulk_p": [
+    0.1,
+    0.9
+   ],
+   "dup_from_week": 23,
+   "dup_prob": 0.8,
+   "early_share": 0.15
+  }
+ },
+ "data": {
+  "week0_start": "2022-05-01",
+  "test_week": 25,
+  "train_weeks": [
+   21,
+   22,
+   23,
+   24
+  ],
+  "stale_weeks": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22,
+   23,
+   24
+  ],
+  "test_start": "2022-10-23",
+  "train_start": "2022-09-25",
+  "first_full_week": 0,
+  "rows_file": 206431,
+  "rows_used": 203650,
+  "trimmed_to_last_weeks": null
+ },
+ "runs": [
+  {
+   "key": "reference",
+   "guard": false,
+   "mae": 95.73750004926944,
+   "p90_err": 213.5735214508689,
+   "miss_rate": 0.2676826064109301,
+   "promise_mean": 329.73839921203836,
+   "width_mean": 88.77392730222071,
+   "defer_rate": 0.0,
+   "n_deferred": 0,
+   "mae_served": 95.73750004926944,
+   "n_train": 30978,
+   "eff_n": 30978.0,
+   "frac_downweighted": 0.0,
+   "n_test": 9515,
+   "train_s": 0.4250011669937521,
+   "predict_ms_per_pkg": 0.010223581187213667,
+   "feature_age_days": 1.0,
+   "label": "Reference (as uploaded, Guard off)",
+   "run_s": 0.5913918750011362
+  },
+  {
+   "key": "degraded_off",
+   "guard": false,
+   "mae": 136.2338332430608,
+   "p90_err": 342.8870960464142,
+   "miss_rate": 0.17172884918549658,
+   "promise_mean": 405.49007982289135,
+   "width_mean": 91.33327128511809,
+   "defer_rate": 0.0,
+   "n_deferred": 0,
+   "mae_served": 136.2338332430608,
+   "n_train": 33674,
+   "eff_n": 33674.0,
+   "frac_downweighted": 0.0,
+   "n_test": 9515,
+   "train_s": 0.4270361670060083,
+   "predict_ms_per_pkg": 0.009170629744062174,
+   "feature_age_days": 1.0,
+   "label": "Poisoned, Guard off",
+   "run_s": 0.5830474169924855
+  },
+  {
+   "key": "degraded_on",
+   "guard": true,
+   "mae": 98.78213772868328,
+   "p90_err": 221.72468366608277,
+   "miss_rate": 0.21124540199684708,
+   "promise_mean": 352.30917808113713,
+   "width_mean": 109.33455186038525,
+   "defer_rate": 0.049185496584340516,
+   "n_deferred": 468,
+   "mae_served": 93.37867639234332,
+   "n_train": 33674,
+   "eff_n": 17481.34107057458,
+   "frac_downweighted": 0.8599512977371265,
+   "n_test": 9515,
+   "train_s": 1.2245416670048144,
+   "predict_ms_per_pkg": 0.01044709238060273,
+   "feature_age_days": 1.0,
+   "label": "Poisoned, Guard on",
+   "run_s": 1.5372671249788254
+  }
+ ],
+ "headline": {
+  "kind": "injected",
+  "gap_min": 40.496333193791344,
+  "noise_floor_min": 0.9573750004926944,
+  "recovery_pct": 92.48169540475674,
+  "verdict": "green",
+  "sentence": "The Guard recovered 92% of the damage: MAE 136.2 -> 98.8 min (reference 95.7)."
+ },
+ "guard": {
+  "n_train": 33674,
+  "flags": {
+   "nonpos": 0,
+   "burst": 5275,
+   "dup": 2696,
+   "gps_age": 0,
+   "far": 119,
+   "any": 6011
+  },
+  "quarantined": 6011,
+  "frac_downweighted": 0.8599512977371265,
+  "eff_n": 17481.34107057458,
+  "deferred": 468,
+  "n_test": 9515,
+  "defer_reasons": {
+   "hist": 0,
+   "gps": 0,
+   "area": 440,
+   "width": 38
+  }
+ },
+ "detector": {
+  "tp": 5679,
+  "fp": 332,
+  "fn": 138,
+  "tn": 27525,
+  "precision": 0.9447679254699717,
+  "recall": 0.9762764311500773,
+  "fpr": 0.011918009835947877,
+  "injected_train_rows": 5817
+ },
+ "reputation": {
+  "edges": [
+   0.1,
+   0.15,
+   0.2,
+   0.25,
+   0.3,
+   0.35,
+   0.4,
+   0.45,
+   0.5,
+   0.55,
+   0.6,
+   0.65,
+   0.7,
+   0.75,
+   0.8,
+   0.85,
+   0.9,
+   0.95,
+   1.0
+  ],
+  "counts": [
+   13,
+   2,
+   2,
+   0,
+   1,
+   3,
+   1,
+   3,
+   2,
+   5,
+   5,
+   2,
+   1,
+   2,
+   2,
+   3,
+   3,
+   88
+  ],
+  "n_couriers": 138,
+  "lowest": [
+   {
+    "courier": "22239557",
+    "n": 311,
+    "flag_rate": 0.932475884244373,
+    "z": -0.8901937127791919,
+    "rep": 0.11280960589265379,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "01b21490",
+    "n": 180,
+    "flag_rate": 0.9,
+    "z": 1.2466379903239415,
+    "rep": 0.11539200031633436,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "097d8ed1",
+    "n": 581,
+    "flag_rate": 0.6695352839931153,
+    "z": -1.4000013718257625,
+    "rep": 0.12550124661270073,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "6797e51f",
+    "n": 1531,
+    "flag_rate": 0.6492488569562378,
+    "z": 1.3604822700627497,
+    "rep": 0.1261796895310434,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "68f95fe5",
+    "n": 1040,
+    "flag_rate": 0.635576923076923,
+    "z": -1.3491457140754017,
+    "rep": 0.129202465326215,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "62f5c773",
+    "n": 787,
+    "flag_rate": 0.662007623888183,
+    "z": -1.172270345441193,
+    "rep": 0.13143606002125205,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "d60fdd0c",
+    "n": 911,
+    "flag_rate": 0.6597145993413831,
+    "z": -0.20556598084907143,
+    "rep": 0.13692849586610847,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "f16e25a4",
+    "n": 516,
+    "flag_rate": 0.6744186046511628,
+    "z": -0.8032795211606377,
+    "rep": 0.13717295855988457,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "aff95068",
+    "n": 955,
+    "flag_rate": 0.6554973821989529,
+    "z": -0.7671379566208506,
+    "rep": 0.1375145849253567,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   },
+   {
+    "courier": "991f5c61",
+    "n": 479,
+    "flag_rate": 0.6722338204592901,
+    "z": 0.394885703441582,
+    "rep": 0.13806632109007502,
+    "sloppy": true,
+    "early": false,
+    "released": false
+   }
+  ],
+  "n_sloppy": 40,
+  "n_early": 0,
+  "sloppy_caught": 19
+ },
+ "injection": {
+  "bulk_scan": 4885,
+  "duplicate_upload": 4410
+ },
+ "explain": [
+  {
+   "kind": "typical",
+   "label": "A typical package",
+   "y": 211.0,
+   "features": [
+    {
+     "name": "hour",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "minute_of_day",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dow",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "region_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_type",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lng",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lat",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dist_km",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "open_workload",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "courier_hist_mean",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "area_hist_mean",
+     "off": null,
+     "on": null
+    }
+   ],
+   "contrib_off": [
+    1.570837846884014,
+    1.588672447001855,
+    0.17011805513275147,
+    8.735144711633813,
+    -0.050677112497146126,
+    0.32096579816293136,
+    5.101991140836243,
+    -4.287226032140404,
+    0.037505251456684256,
+    -3.6528971443357023,
+    236.76945505029946,
+    55.76970783818373
+   ],
+   "contrib_on": [
+    2.8989066849445195,
+    10.822714999204033,
+    0.3836026632540571,
+    1.3935395785242128,
+    -0.48107068939104014,
+    1.04053635501515,
+    17.167433458425123,
+    1.7914810057091057,
+    5.83059815923628,
+    -0.9489223808654689,
+    -47.36502036461442,
+    33.83944869652871
+   ],
+   "base_off": 297.2383290894548,
+   "base_on": 252.17856737165275,
+   "p50_off": 599.3119269400734,
+   "p50_on": 278.55181553762293,
+   "p80_off": 650.2882199337506,
+   "p80_on": 389.8579070042618,
+   "reasons": {
+    "hist": false,
+    "gps": false,
+    "area": false,
+    "width": false
+   },
+   "decision": "approve"
+  },
+  {
+   "kind": "sloppy",
+   "label": "From a courier the poison dial made sloppy",
+   "y": 2175.0,
+   "features": [
+    {
+     "name": "hour",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "minute_of_day",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dow",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "region_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_type",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lng",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lat",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dist_km",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "open_workload",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "courier_hist_mean",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "area_hist_mean",
+     "off": null,
+     "on": null
+    }
+   ],
+   "contrib_off": [
+    18.057648501189718,
+    109.61636394074243,
+    3.7866420565051144,
+    2.376635414750556,
+    -4.757731730635416,
+    -0.22670877944229098,
+    8.908191478120013,
+    23.705633456558797,
+    79.73319403990564,
+    6.300855694493091,
+    1354.155079089965,
+    319.58008499995253
+   ],
+   "contrib_on": [
+    2.388100970745852,
+    15.526022644427844,
+    0.641473357800298,
+    10.600288449691378,
+    -9.458965479300156,
+    -1.9711965609001953,
+    4.525038847866427,
+    24.42552190505701,
+    62.915234409589694,
+    23.398070933877317,
+    -29.768878793348122,
+    20.93628640168328
+   ],
+   "base_off": 297.2383290894548,
+   "base_on": 252.17856737165275,
+   "p50_off": 2218.4742172515635,
+   "p50_on": 376.3355644588435,
+   "p80_off": 2225.0443000075684,
+   "p80_on": 1014.2965949929301,
+   "reasons": {
+    "hist": false,
+    "gps": false,
+    "area": true,
+    "width": true
+   },
+   "decision": "defer"
+  },
+  {
+   "kind": "deferred",
+   "label": "One the Guard deferred to a dispatcher",
+   "y": 524.0,
+   "features": [
+    {
+     "name": "hour",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "minute_of_day",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dow",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "region_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_type",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lng",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lat",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dist_km",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "open_workload",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "courier_hist_mean",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "area_hist_mean",
+     "off": null,
+     "on": null
+    }
+   ],
+   "contrib_off": [
+    0.7230687444090105,
+    -4.797361045170739,
+    -2.0186851235098273,
+    -3.1937908973033955,
+    0.9455625688727157,
+    -0.16873253055273188,
+    -14.200676401365266,
+    10.647726025772386,
+    7.048524467445288,
+    6.3236936895918845,
+    329.83987410785994,
+    18.039032450742482
+   ],
+   "contrib_on": [
+    1.9447637430644076,
+    14.104708363541215,
+    0.07121130892638958,
+    15.467956922689629,
+    3.7469733307169295,
+    1.9633969991089186,
+    -15.549705234173958,
+    24.657737373468105,
+    44.080371612362704,
+    53.1847369498478,
+    266.2678288949254,
+    85.1800720314893
+   ],
+   "base_off": 297.2383290894548,
+   "base_on": 252.17856737165275,
+   "p50_off": 646.4265651462465,
+   "p50_on": 747.2986196676202,
+   "p80_off": 874.6083447306979,
+   "p80_on": 1998.2154292033958,
+   "reasons": {
+    "hist": false,
+    "gps": false,
+    "area": true,
+    "width": true
+   },
+   "decision": "defer"
+  },
+  {
+   "kind": "rare_area",
+   "label": "In a rarely seen area",
+   "y": 620.0,
+   "features": [
+    {
+     "name": "hour",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "minute_of_day",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dow",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "region_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_type",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lng",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lat",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dist_km",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "open_workload",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "courier_hist_mean",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "area_hist_mean",
+     "off": null,
+     "on": null
+    }
+   ],
+   "contrib_off": [
+    1.8087490184381672,
+    12.881261591026506,
+    -0.6296668196740055,
+    -0.006124935634310438,
+    -2.473985740458972,
+    -0.3125747719485464,
+    -24.565269108534295,
+    -4.636840218382142,
+    31.384135837400365,
+    3.471623775582855,
+    -66.50169447273841,
+    10.58427997464101
+   ],
+   "contrib_on": [
+    2.0034027784031148,
+    14.852887815801218,
+    0.041911028233037516,
+    -1.9963217292941462,
+    -0.1766574860314926,
+    -0.39590004636565085,
+    -26.458332049913107,
+    17.780585956155974,
+    60.08458203449991,
+    11.439129987022719,
+    -52.41796552678896,
+    21.972120600326686
+   ],
+   "base_off": 297.2383290894548,
+   "base_on": 252.17856737165275,
+   "p50_off": 258.24222321917375,
+   "p50_on": 298.90801073370216,
+   "p80_off": 420.5673021562492,
+   "p80_on": 471.23028257254646,
+   "reasons": {
+    "hist": false,
+    "gps": false,
+    "area": true,
+    "width": false
+   },
+   "decision": "defer"
+  },
+  {
+   "kind": "long",
+   "label": "A long delivery",
+   "y": 607.0,
+   "features": [
+    {
+     "name": "hour",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "minute_of_day",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dow",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "region_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_id",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "aoi_type",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lng",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "lat",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "dist_km",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "open_workload",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "courier_hist_mean",
+     "off": null,
+     "on": null
+    },
+    {
+     "name": "area_hist_mean",
+     "off": null,
+     "on": null
+    }
+   ],
+   "contrib_off": [
+    2.811637731952521,
+    14.051559931857176,
+    2.405377528825979,
+    5.0870470753884955,
+    0.9083508418022621,
+    0.33111919685783736,
+    4.072778084049788,
+    -24.509584995041145,
+    7.554107380153285,
+    -2.7172905152926132,
+    19.576514116458505,
+    127.60996711409832
+   ],
+   "contrib_on": [
+    4.0974350222694,
+    24.450905640576522,
+    -0.05501659816440318,
+    0.9889261976504063,
+    1.674244130058399,
+    1.6875306024690564,
+    8.66595122030349,
+    -12.339708878717662,
+    -7.772877038584023,
+    -2.2535718051414073,
+    58.86765001761937,
+    195.9389635130332
+   ],
+   "base_off": 297.2383290894548,
+   "base_on": 252.17856737165275,
+   "p50_off": 454.4199125805657,
+   "p50_on": 526.1289993950245,
+   "p80_off": 645.4490165031613,
+   "p80_on": 636.7194789436527,
+   "reasons": {
+    "hist": false,
+    "gps": false,
+    "area": false,
+    "width": false
+   },
+   "decision": "approve"
+  }
+ ],
+ "human": {
+  "deferred": 468,
+  "sec_per_pkg_assumed": 45,
+  "dispatcher_min": 351.0,
+  "train_s_guard": 1.2245416670048144,
+  "predict_ms_per_pkg": 0.01044709238060273,
+  "n_test": 9515
+ },
+ "versions": {
+  "python": "3.13.5",
+  "pandas": "3.0.6",
+  "numpy": "2.5.4",
+  "lightgbm": "4.7.0",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+ },
+ "quarantine": {
+  "columns": [
+   "file_line",
+   "courier",
+   "reasons",
+   "note"
+  ],
+  "rows": [],
+  "n": 6011
+ },
+ "timings": {
+  "inject_s": 0.09218637499725446,
+  "score_s": 0.09821500000543892,
+  "total_s": 2.903540957981022,
+  "audit_s": 0.3337082499929238,
+  "prepare_s": 0.21416162501554936,
+  "end_to_end_s": 3.4538634170021396
+ },
+ "config": {
+  "config_hash": "e54a0bf568c4",
+  "guard_hash": "167f6a506756",
+  "guard": {
+   "l1": {
+    "burst_min_packages": 5,
+    "gps_age_max_min": 30,
+    "dist_max_km": 30,
+    "quarantine_weight": 0.05
+   },
+   "l2": {
+    "half_life_weeks": 4,
+    "reputation_lambda": 0.5,
+    "prior_records": 30,
+    "rep_floor": 0.1,
+    "courier_cap_mult": 2.0,
+    "hist_max_age_days": null
+   },
+   "l3": {
+    "conformal": true,
+    "target_coverage": 0.8,
+    "defer_hist_age_days": null,
+    "defer_gps_age_min": 30,
+    "defer_min_area_rows": 1,
+    "defer_width_k": 4.0
+   },
+   "monitor": {
+    "miss_low": 0.15,
+    "miss_high": 0.25
+   }
+  }
+ },
+ "audit": {
+  "rows": 206431,
+  "n_full_weeks": 26,
+  "week0_start": "2022-05-01",
+  "weeks": [
+   {
+    "week": 0,
+    "start": "2022-05-01",
+    "rows": 6347,
+    "full": true
+   },
+   {
+    "week": 1,
+    "start": "2022-05-08",
+    "rows": 5670,
+    "full": true
+   },
+   {
+    "week": 2,
+    "start": "2022-05-15",
+    "rows": 6187,
+    "full": true
+   },
+   {
+    "week": 3,
+    "start": "2022-05-22",
+    "rows": 7839,
+    "full": true
+   },
+   {
+    "week": 4,
+    "start": "2022-05-29",
+    "rows": 10370,
+    "full": true
+   },
+   {
+    "week": 5,
+    "start": "2022-06-05",
+    "rows": 8320,
+    "full": true
+   },
+   {
+    "week": 6,
+    "start": "2022-06-12",
+    "rows": 9379,
+    "full": true
+   },
+   {
+    "week": 7,
+    "start": "2022-06-19",
+    "rows": 9851,
+    "full": true
+   },
+   {
+    "week": 8,
+    "start": "2022-06-26",
+    "rows": 6161,
+    "full": true
+   },
+   {
+    "week": 9,
+    "start": "2022-07-03",
+    "rows": 6391,
+    "full": true
+   },
+   {
+    "week": 10,
+    "start": "2022-07-10",
+    "rows": 7049,
+    "full": true
+   },
+   {
+    "week": 11,
+    "start": "2022-07-17",
+    "rows": 7275,
+    "full": true
+   },
+   {
+    "week": 12,
+    "start": "2022-07-24",
+    "rows": 7895,
+    "full": true
+   },
+   {
+    "week": 13,
+    "start": "2022-07-31",
+    "rows": 7180,
+    "full": true
+   },
+   {
+    "week": 14,
+    "start": "2022-08-07",
+    "rows": 9099,
+    "full": true
+   },
+   {
+    "week": 15,
+    "start": "2022-08-14",
+    "rows": 7954,
+    "full": true
+   },
+   {
+    "week": 16,
+    "start": "2022-08-21",
+    "rows": 8044,
+    "full": true
+   },
+   {
+    "week": 17,
+    "start": "2022-08-28",
+    "rows": 8645,
+    "full": true
+   },
+   {
+    "week": 18,
+    "start": "2022-09-04",
+    "rows": 9124,
+    "full": true
+   },
+   {
+    "week": 19,
+    "start": "2022-09-11",
+    "rows": 7196,
+    "full": true
+   },
+   {
+    "week": 20,
+    "start": "2022-09-18",
+    "rows": 7461,
+    "full": true
+   },
+   {
+    "week": 21,
+    "start": "2022-09-25",
+    "rows": 7180,
+    "full": true
+   },
+   {
+    "week": 22,
+    "start": "2022-10-02",
+    "rows": 7666,
+    "full": true
+   },
+   {
+    "week": 23,
+    "start": "2022-10-09",
+    "rows": 7811,
+    "full": true
+   },
+   {
+    "week": 24,
+    "start": "2022-10-16",
+    "rows": 8388,
+    "full": true
+   },
+   {
+    "week": 25,
+    "start": "2022-10-23",
+    "rows": 9535,
+    "full": true
+   },
+   {
+    "week": 26,
+    "start": "2022-10-30",
+    "rows": 2414,
+    "full": false
+   }
+  ],
+  "observed_issues": {
+   "duration_le_0": 369,
+   "duration_gt_12h": 4514,
+   "duration_gt_24h": 2650,
+   "same_minute_burst_ge5_rows": 0,
+   "missing_accept_gps": 2422,
+   "missing_delivery_gps": 0,
+   "gps_fix_age_gt_30min": 0,
+   "gps_fix_age_negative": 0,
+   "courier_to_stop_gt_30km": 835,
+   "duplicate_order_id": 0
+  },
+  "n_couriers": 205,
+  "n_aoi": 8163,
+  "n_regions": 17,
+  "date_range_accept": [
+   "2022-05-01 07:34:00",
+   "2022-10-31 20:19:00"
+  ],
+  "plan": {
+   "test_week": 25,
+   "test_start": "2022-10-23",
+   "train_weeks": [
+    21,
+    22,
+    23,
+    24
+   ],
+   "train_start": "2022-09-25"
+  }
+ },
+ "source": "cached",
+ "data_name": "LaDe Yantai (delivery_yt.csv)"
+}

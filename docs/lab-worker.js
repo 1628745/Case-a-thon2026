@@ -36,7 +36,8 @@ function load() {
     py.globals.set("CFG_JSON", JSON.stringify(cfg));
     py.globals.set("SALT", SALT);
     py.runPython([
-      "import sys, json, traceback",
+      "import sys, json, traceback, warnings",
+      "warnings.filterwarnings('ignore', message='X does not have valid feature names')",
       "sys.path.insert(0, '/home/pyodide')",
       "import guardlab.lab as lab",
       "LAB = json.loads(CFG_JSON)",

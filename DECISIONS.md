@@ -122,3 +122,9 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 - Cancel = the page terminates the worker and starts a fresh one (a busy worker cannot read messages). Python errors are classed: `data` (a `LabError`, worded for the user), `memory`, `python` (traceback in `detail`), `load` (CDN or WebAssembly failure -> cached fallback offered).
 - Results leave Python as strict JSON (`lab.to_json`: NaN/inf -> null).
 - Added `lab.run_sweep` (P3 dose-response) now so the worker protocol is final; the UI comes in L8.
+
+## L5: page
+- The lab header reuses `.track` but has its own 5-step progress bar (`.lab-steps`), because the index route bar is built for 3 stops and is animated by app.js. Shared classes from style.css are reused unchanged (.btn, .ghost, .seg, .t, .gauge, .verdict, .facts, .err, .counter); lab-only rules live in lab.css.
+- The cached Yantai result (`docs/data/lab_cached_yantai.json`, from `lab_native.py --cached`) is offered both when Python fails and as a "No time?" link in step 1. It has no feature values and no per-row quarantine list, and its courier hashes use a discarded random salt.
+- The test server sends `Cache-Control: no-store` so tests always run against the current files; the Pyodide download stays cached in `.cache/pw-profile`.
+- sklearn's "X does not have valid feature names" warnings are silenced in the worker (console noise only; the model inputs are the same arrays as natively).

@@ -1,6 +1,6 @@
 # LAB_PROGRESS
 
-Status: IN PROGRESS (L5).
+Status: IN PROGRESS (L6).
 
 origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged at DONE). Resume at the first unchecked step. Blockers (if any) go here at the top.
 
@@ -10,7 +10,7 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - [x] L2 Native lab experiment (lab_native.py) + result schema
 - [x] L3 Synthetic sample
 - [x] L4 Web Worker with Pyodide
-- [ ] L5 lab.html: steps 1-5 + P1 results
+- [x] L5 lab.html: steps 1-5 + P1 results
 - [ ] L6 P2 features
 - [ ] L7 Yantai parity, cached fallback, performance budgets
 - [ ] L8 P3 (if time)
@@ -24,3 +24,4 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - 2026-10-23 L2: lab_native.py; synthetic + Yantai all presets run natively (Yantai sloppy 95.7/136.2/98.8 MAE, 92% recovered; end to end 3.5 s). Schema in DECISIONS.md.
 - 2026-10-23 L3: synthetic sample 23,143 rows / 3.5 MB, 8 full weeks, 45 couriers, 267 areas, P99 duration 36 h, city=SYNTHETIC; deterministic (same sha on rebuild); native sloppy run 1.1 s, Guard recovers 95%.
 - 2026-10-23 L4: docs/lab-worker.js (Pyodide 0.29.4: pandas 2.3.3, LightGBM 4.6.0). tests/e2e_lab.py worker: 7/7 (same schema as native; sample MAE within 0.1% of native). Cached load 3.9 s, audit 0.14 s, sloppy run 3.2 s.
+- 2026-10-23 L5: lab.html/lab.css/lab.js (steps 1-5, P1 results, cached fallback). tests/e2e_lab.py lab 63/63: synthetic default run 3.3 s (budget 45 s), clean run, Yantai audit 0.1 s, Yantai run 10.5 s (budget 90 s), zero console errors, no overflow at 1440/390.

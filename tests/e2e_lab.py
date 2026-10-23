@@ -31,6 +31,10 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")  # always test the current files (Pyodide from the CDN stays cached)
+        super().end_headers()
+
 
 def serve():
     h = functools.partial(Quiet, directory=DOCS)
@@ -153,12 +157,225 @@ def main(what):
     return 0 if ok else 1
 
 
+def wait_result(page, prev_id, timeout=600_000):
+    """Wait until window.__lab.result is a new object and nothing is running; returns its timings."""
+    page.wait_for_function("(prev) => window.__lab.result && !window.__lab.running && window.__lab.result !== window.__labPrev",
+                           arg=prev_id, timeout=timeout)
+    page.evaluate("window.__labPrev = window.__lab.result")
+    return page.evaluate("JSON.parse(JSON.stringify({t: window.__lab.result.timings, h: window.__lab.result.headline, "
+                         "runs: window.__lab.result.runs.map(r => [r.key, r.mae]), released: window.__lab.result.settings.released}))")
+
+
+def results_ok(page, tag, injected):
+    n_kpi = page.locator("#kpis .kpi").count()
+    big = page.locator("#kpis .kpi .big").all_inner_texts()
+    check(f"{tag}: KPI cards filled", n_kpi == (4 if injected else 3) and all(b.strip() and not b.startswith("–") for b in big), big)
+    check(f"{tag}: banner", page.locator("#banner").inner_text().strip() != "", page.locator("#banner").inner_text()[:90])
+    bars = page.locator("#ch-mae svg rect").count()
+    check(f"{tag}: MAE chart renders", bars >= (6 if injected else 4), bars)
+    check(f"{tag}: reputation chart + table", page.locator("#ch-rep svg rect").count() > 3 and page.locator("#rep-table tbody tr").count() >= 1)
+    check(f"{tag}: guard activity", page.locator("#guard-act .gauge").count() == 5)
+    det = page.locator("#det").inner_text()
+    check(f"{tag}: detector scorecard", ("Precision" in det) if injected else ("Nothing was injected" in det), det[:80])
+    check(f"{tag}: explain waterfalls", page.locator("#wf-off svg rect").count() >= 8 and page.locator("#wf-on svg rect").count() >= 8)
+    check(f"{tag}: run facts", "Seed" in page.locator("#facts").inner_text())
+
+
+def downloads_ok(page, tag):
+    out = {}
+    for k, fn in [("report", "lab_report.json"), ("quarantine", "quarantine.csv"), ("card", "model_card.md")]:
+        with page.expect_download() as d:
+            page.click(f'[data-dl="{k}"]')
+        dl = d.value
+        with open(dl.path(), encoding="utf-8") as f:
+            out[k] = f.read()
+        check(f"{tag}: download {fn} name", dl.suggested_filename == fn, dl.suggested_filename)
+    rep = json.loads(out["report"])
+    check(f"{tag}: lab_report.json valid", all(k in rep for k in SCHEMA_KEYS) and rep["quarantine"]["n"] >= 0)
+    lines = out["quarantine"].strip().splitlines()
+    nq = page.evaluate("window.__lab.result.quarantine.rows.length")
+    check(f"{tag}: quarantine.csv valid", lines[0] == "file_line,courier,reasons,note" and len(lines) - 1 == nq
+          and all(len(x.split(",")) == 4 for x in lines[1:]), f"{len(lines) - 1} rows")
+    check(f"{tag}: model_card.md valid", out["card"].startswith("# Model card") and "## Metrics" in out["card"] and "## Guard settings" in out["card"])
+    check(f"{tag}: no coordinates in report", all(f["off"] is None for e in rep["explain"] for f in e["features"] if f["name"] in ("lng", "lat")))
+
+
+def no_overflow(page, tag):
+    w = page.evaluate("[document.documentElement.scrollWidth, document.documentElement.clientWidth]")
+    return check(f"{tag}: no horizontal overflow", w[0] <= w[1], w)
+
+
+def shots(page, name):
+    for scheme in ("light", "dark"):
+        page.emulate_media(color_scheme=scheme)
+        page.evaluate("document.documentElement.removeAttribute('data-theme'); window.dispatchEvent(new Event('resize'))")
+        page.wait_for_timeout(500)
+        page.screenshot(path=os.path.join(SHOTS, f"{name}_{scheme}.png"), full_page=True)
+    page.emulate_media(color_scheme="light")
+
+
 def lab_check(ctx, p):
-    raise NotImplementedError
+    page = ctx.new_page()
+    errs = []
+    console_watch(page, errs)
+    t = time.time()
+    page.goto(BASE + "/lab.html")
+    page.wait_for_function("window.__lab && window.__lab.ready", timeout=180_000)
+    REPORT["timings"]["page_python_ready_s"] = time.time() - t
+    check("lab: Python loads", True, f"{time.time() - t:.1f} s")
+    page.evaluate("window.__labPrev = null")
+
+    # synthetic, default preset
+    page.click("#use-sample")
+    page.wait_for_function("window.__lab.audit && window.__lab.audit.ok", timeout=60_000)
+    check("synthetic: audit counters", "8" in page.locator("#check-counters").inner_text() and page.locator("#ch-weeks svg rect").count() == 8)
+    check("synthetic: default preset is Sloppy 20%", page.get_attribute('[data-preset="sloppy"]', "aria-checked") == "true")
+    t = time.time()
+    page.click("#run")
+    r = wait_result(page, None)
+    REPORT["timings"]["synthetic_sloppy"] = {"click_to_result_s": time.time() - t, **r["t"]}
+    check("synthetic: default run <= 45 s", time.time() - t <= 45, f"{time.time() - t:.1f} s")
+    results_ok(page, "synthetic sloppy", True)
+    downloads_ok(page, "synthetic sloppy")
+    no_overflow(page, "synthetic 1440")
+    shots(page, "lab_1440_synthetic")
+
+    # P2: explain picker, human release, effort
+    n_ex = page.locator("#ex-pick option").count()
+    for i in range(n_ex):
+        page.select_option("#ex-pick", str(i))
+        page.wait_for_timeout(100)
+    check("P2 explain: every example renders", n_ex >= 4 and page.locator("#wf-on svg rect").count() >= 8 and
+          page.locator(".l3card .verdict").count() == 1, f"{n_ex} examples")
+    check("P2 effort: compute vs human", "ms per package" in page.locator("#effort").inner_text() and "45 s" in page.locator("#effort").inner_text())
+    first = page.locator("#rep-table [data-release]").first
+    h = first.get_attribute("data-release")
+    first.check()
+    t = time.time()
+    page.click("#rerun")
+    r2 = wait_result(page, None)
+    REPORT["timings"]["synthetic_release_rerun_s"] = time.time() - t
+    check("P2 release: rerun applies the override", r2["released"] == [h] and page.locator("#rerun-diff").inner_text().startswith("With 1 courier"),
+          page.locator("#rerun-diff").inner_text())
+    rel_row = page.locator(f'#rep-table [data-release="{h}"]')
+    check("P2 release: released courier shows reputation 1 or leaves the lowest 10",
+          rel_row.count() == 0 or rel_row.locator("xpath=../..").locator("td").nth(4).inner_text() == "1.00")
+
+    # P3: sweep
+    t = time.time()
+    page.click("#sweep")
+    page.wait_for_function("window.__lab.sweep && !window.__lab.running", timeout=600_000)
+    REPORT["timings"]["synthetic_sweep_s"] = time.time() - t
+    pts = page.evaluate("window.__lab.sweep.result.points")
+    check("P3 sweep: 4 doses drawn", len(pts) == 4 and page.locator("#ch-sweep svg circle").count() == 8,
+          [(x["share"], round(x["mae_off"], 1), round(x["mae_on"], 1)) for x in pts])
+    REPORT["sweep_synthetic"] = pts
+
+    # synthetic, clean
+    page.click('[data-preset="clean"]')
+    t = time.time()
+    page.click("#run")
+    r = wait_result(page, None)
+    REPORT["timings"]["synthetic_clean"] = {"click_to_result_s": time.time() - t, **r["t"]}
+    results_ok(page, "synthetic clean", False)
+    downloads_ok(page, "synthetic clean")
+
+    # cancel, then the worker comes back
+    page.click('[data-preset="sloppy"]')
+    page.click("#run")
+    page.wait_for_timeout(700)
+    page.click("#cancel")
+    check("cancel: run stops", page.locator("#run-step").inner_text() == "Cancelled")
+    page.wait_for_function("window.__lab.ready", timeout=120_000)
+    check("cancel: Python restarts", True)
+
+    # Yantai via the file picker
+    if os.path.exists(YT):
+        t = time.time()
+        page.set_input_files("#file", YT)
+        page.wait_for_function("window.__lab.audit && window.__lab.audit.ok", timeout=120_000)
+        audit_s = page.evaluate("window.__lab.audit.audit_s")
+        REPORT["timings"]["yantai_audit_s"] = audit_s
+        check("Yantai: audit <= 15 s", audit_s <= 15, f"{audit_s:.1f} s")
+        page.click('[data-preset="sloppy"]')
+        t = time.time()
+        page.click("#run")
+        r = wait_result(page, None)
+        el = time.time() - t
+        REPORT["timings"]["yantai_sloppy"] = {"click_to_result_s": el, **r["t"]}
+        check("Yantai: default run <= 90 s", el <= 90, f"{el:.1f} s")
+        results_ok(page, "Yantai sloppy", True)
+        downloads_ok(page, "Yantai sloppy")
+        nat_p = os.path.join(ROOT, "logs", "lab", "native_yt_sloppy.json")
+        if os.path.exists(nat_p):
+            with open(nat_p) as f:
+                nat = {m["key"]: m["mae"] for m in json.load(f)["runs"]}
+            br = dict(r["runs"])
+            rel = {k: abs(br[k] - nat[k]) / nat[k] for k in nat}
+            REPORT["parity_yantai"] = {"browser": br, "native": nat, "rel_diff": rel}
+            check("Yantai parity: browser MAE within 2% of native", max(rel.values()) < 0.02,
+                  {k: f"{br[k]:.2f} vs {nat[k]:.2f}" for k in nat})
+        shots(page, "lab_1440_yantai")
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.wait_for_timeout(600)
+        no_overflow(page, "Yantai 390")
+        shots(page, "lab_390_yantai")
+        page.set_viewport_size({"width": 1440, "height": 900})
+    else:
+        check("Yantai: data/raw/delivery_yt.csv present", False)
+
+    # cached fallback
+    page.click("#show-cached")
+    page.wait_for_function("window.__lab.cached", timeout=30_000)
+    check("cached fallback: badge + results", page.locator("#cached-badge").is_visible() and page.locator("#kpis .kpi").count() == 4)
+    check("lab: zero console errors", not errs, errs[:5])
+    page.close()
 
 
 def smoke_check(ctx):
-    raise NotImplementedError
+    page = ctx.new_page()
+    errs = []
+    console_watch(page, errs)
+    page.goto(BASE + "/index.html")
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(1500)
+    info = page.evaluate("""() => ({
+      sections: ['poisons', 'built', 'analysis', 'walk'].filter(id => document.getElementById(id)).length,
+      svgs: document.querySelectorAll('main svg').length,
+      chartSvgs: document.querySelectorAll('.chart svg').length,
+      err: !!document.querySelector('main .err'),
+      tryit: !!document.querySelector('header a[href="lab.html"]'),
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth })""")
+    REPORT["smoke_index"] = info
+    base_p = os.path.join(ROOT, "logs", "smoke_baseline.json")
+    if os.path.exists(base_p):
+        with open(base_p) as f:
+            base = json.load(f)
+        check("index: same sections and charts as before", info["sections"] == base["sections"] and info["chartSvgs"] == base["chartSvgs"]
+              and info["svgs"] == base["svgs"], {"now": info, "baseline": base})
+    else:
+        with open(base_p, "w") as f:
+            json.dump(info, f)
+        check("index: baseline recorded", True, info)
+    check("index: sections present", info["sections"] == 4, info["sections"])
+    check("index: charts render", info["chartSvgs"] >= 5, info["chartSvgs"])
+    check("index: no data-load error box", not info["err"])
+    check("index: no horizontal overflow", not info["overflow"])
+    check("index: zero console errors", not errs, errs[:5])
+    if os.environ.get("E2E_BASELINE"):
+        page.close()
+        return
+    page.screenshot(path=os.path.join(SHOTS, "index_1440.png"))
+    check("index: Try it link in the header", info["tryit"])
+    page.click('header a[href="lab.html"]')
+    page.wait_for_url("**/lab.html")
+    check("index: Try it link opens the lab", page.title().startswith("Try it"), page.title())
+    page.goto(BASE + "/index.html")
+    page.wait_for_load_state("networkidle")
+    page.keyboard.press("5")
+    page.wait_for_url("**/lab.html", timeout=10_000)
+    check("index: key 5 opens the lab", True)
+    page.close()
 
 
 if __name__ == "__main__":
