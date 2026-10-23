@@ -396,14 +396,14 @@ select:hover, input:hover { border-color: var(--muted); }
 section#built > .roles { margin-top: 22px; }
 .counter.lead .num { color: var(--tote-ink); white-space: nowrap; }
 .counters { grid-template-columns: 1.35fr repeat(4, 1fr); }
-.wk-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 12px; }
-.wk-head { font-size: 17px; margin: 0 0 6px; min-height: 2.8em; }
+.wk-pair { display: grid; grid-template-columns: 1fr; gap: 28px; margin-top: 12px; }
+.wk-head { font-size: 17px; margin: 0 0 6px; }
 .stack { display: grid; grid-template-columns: 1fr; gap: 28px; margin-top: 12px; }
 .trade { font-size: 18px; max-width: 80ch; padding-left: 22px; }
 .trade li { margin-bottom: 8px; }
 @media (max-width: 1000px) {
   .counters { grid-template-columns: repeat(2, 1fr); }
-  .labels.three, .wk-pair { grid-template-columns: 1fr; }
+  .labels.three { grid-template-columns: 1fr; }
   .demo-grid { grid-template-columns: 1fr 1fr; }
   .demo-grid .panel:nth-child(2) { grid-row: span 2; }
 }
