@@ -499,13 +499,6 @@
       d.classList.add("wait");
       onView(d, function () { setTimeout(function () { d.classList.remove("wait"); }, 300); });
     });
-    var path = $("deco-path"), van = $("deco-van");
-    if (!path || !van) return;
-    var L = path.getTotalLength();
-    function at(f) { var pt = path.getPointAtLength(f * L); van.setAttribute("transform", "translate(" + (pt.x - 20).toFixed(1) + "," + (pt.y - 20).toFixed(1) + ")"); }
-    if (RM) { at(0.55); return; }
-    at(0);
-    onView(van.ownerSVGElement, function () { tween(3200, function (p) { at(0.92 * (1 - Math.pow(1 - p, 2))); }); });
   }
 
   // ------------------------------------------------------------ 2 sorting line (signature)

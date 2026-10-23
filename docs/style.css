@@ -483,3 +483,17 @@ section#built > .roles { margin-top: 22px; }
 }
 @media (max-width: 1100px) { .deco { display: none; } }
 @media (max-width: 640px) { .street-end { padding: 0 16px; } }
+.g-belt { fill: var(--line); }
+.g-belt-dash { stroke: var(--panel); stroke-width: 2; stroke-dasharray: 3 12; }
+.g-bad rect:first-child { fill: none; stroke: var(--lq); stroke-width: 2.5; stroke-dasharray: 5 4; }
+.g-bad .d-tape { stroke: var(--lq); stroke-opacity: .35; stroke-width: 4; }
+.g-x { stroke: var(--lq); stroke-width: 3; stroke-linecap: round; }
+.g-arrow { fill: none; stroke: var(--muted); stroke-width: 2.5; stroke-dasharray: 4 5; stroke-linecap: round; }
+.g-shield path:first-child { fill: var(--tote); stroke: #1B2B3A; stroke-width: 3; stroke-linejoin: round; }
+.g-check { fill: none; stroke: #1B2B3A; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+@media (prefers-reduced-motion: no-preference) {
+  .g-bad { transition: transform 1s cubic-bezier(.2, .7, .2, 1) .2s; }
+  .g-arrow { transition: opacity .4s ease 1.1s; }
+  .deco.wait .g-bad { transform: translate(-102px, 82px); }
+  .deco.wait .g-arrow { opacity: 0; }
+}
