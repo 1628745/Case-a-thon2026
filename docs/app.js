@@ -395,10 +395,10 @@
         return { r: r, t: t };
       });
       var copies = mk("g", {}, svg);
-      var scooter = use(svg, "i-scooter", 0, 0, 40, 30);
-      var cap1 = mk("text", { x: 0, y: 158, style: "font: 600 12px var(--body); fill: var(--ink)" }, svg);
-      var cap2 = mk("text", { x: 0, y: 174, style: "font: 12px var(--body); fill: var(--muted)" }, svg);
-      function ride(x) { scooter.setAttribute("transform", "translate(" + (x - 20) + ",27)"); }
+      var car = use(svg, "i-car", 0, 0, 44, 21);
+      var cap1 = mk("text", { x: 0, y: 136, style: "font: 600 12px var(--body); fill: var(--ink)" }, svg);
+      var cap2 = mk("text", { x: 0, y: 153, style: "font: 12px var(--body); fill: var(--muted)" }, svg);
+      function ride(x) { car.setAttribute("transform", "translate(" + (x - 22) + ",36)"); }
       function stamp(i, txt, color) { cells[i].t.textContent = txt; cells[i].t.style.fill = color; cells[i].r.style.stroke = color; }
       function reset(label) {
         title.textContent = label; copies.innerHTML = ""; cap1.textContent = ""; cap2.textContent = "";
@@ -418,11 +418,7 @@
       }
       function endOfShift() {
         xs.forEach(function (x, i) { stamp(i, late, "var(--lq)"); });
-        [1, 3].forEach(function (i) {
-          mk("rect", { x: xs[i] - 26, y: 117, width: 52, height: 20, rx: 4, style: "fill: none; stroke: var(--lq); stroke-width: 1.5; stroke-dasharray: 3 2" }, copies);
-          mk("text", { x: xs[i], y: 131, "text-anchor": "middle", style: "font: 700 11px var(--body); fill: var(--lq)", text: "copy " + late }, copies);
-        });
-        cap1.textContent = "Every record says " + late + ", and some show up twice.";
+        cap1.textContent = "Every record says " + late + ", the end of the shift.";
         cap2.textContent = "To the model, each delivery looks hours slower.";
       }
       return function (done) {
@@ -441,7 +437,7 @@
   function initPoisons() {
     document.querySelectorAll(".mini[data-anim]").forEach(function (el) {
       var street = el.classList.contains("street");
-      var svg = mk("svg", { viewBox: street ? "0 0 340 180" : "0 0 340 120", "aria-hidden": "true", preserveAspectRatio: "xMinYMid meet" });
+      var svg = mk("svg", { viewBox: street ? "0 0 340 160" : "0 0 340 120", "aria-hidden": "true", preserveAspectRatio: "xMinYMid meet" });
       el.appendChild(svg);
       var play = POISON[el.getAttribute("data-anim")](svg, el), busy = false;
       function run() { if (busy) return; busy = true; play(function () { busy = false; }); }
@@ -450,7 +446,8 @@
       btn.type = "button"; btn.className = "ghost replay"; btn.textContent = "Replay";
       btn.setAttribute("aria-label", "Replay animation");
       btn.addEventListener("click", run);
-      el.appendChild(btn);
+      var stub = el.closest(".label") && el.closest(".label").querySelector(".label-stub");
+      if (stub) { btn.classList.add("in-stub"); stub.appendChild(btn); } else el.appendChild(btn);
       onView(el, run, "0px 0px -25% 0px");
     });
   }
@@ -483,13 +480,13 @@
       else { at(x0); onView(hr, function () { tween(2800, function (p) { at(x0 + (x1 - x0) * easeOut(p)); }, function () { tag.classList.add("in"); }); }); }
     }
     document.querySelectorAll(".lane").forEach(function (el) {
-      var kind = el.getAttribute("data-lane"), isVan = kind === "van";
+      var V_ = { van: [54, 29], truck: [58, 29], pickup: [54, 26], car: [50, 24] }, kind = el.getAttribute("data-lane"), dim = V_[kind] || V_.van;
       var svg = mk("svg", { viewBox: "0 0 600 46" }, el);
       mk("rect", { x: 0, y: 38, width: 560, height: 6, rx: 3, style: "fill: var(--line)" }, svg);
       mk("circle", { cx: 580, cy: 26, r: 15, style: "fill: var(--tote)" }, svg);
       mk("text", { x: 580, y: 32, "text-anchor": "middle", style: "font: 800 17px var(--display); fill: #1B2B3A", text: el.getAttribute("data-n") }, svg);
-      var w = isVan ? 54 : 42, h = isVan ? 29 : 31, y = 40 - h, x0 = -w, x1 = 552 - w;
-      var v = use(svg, isVan ? "i-van" : "i-scooter", 0, 0, w, h);
+      var w = dim[0], h = dim[1], y = 41 - h, x0 = -w, x1 = 552 - w;
+      var v = use(svg, "i-" + kind, 0, 0, w, h);
       function at(x) { v.setAttribute("transform", "translate(" + x + "," + y + ")"); }
       if (RM) { at(x1); return; }
       at(x0);

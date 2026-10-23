@@ -421,7 +421,7 @@ section#built > .roles { margin-top: 22px; }
 .route-van { position: absolute; left: 0; top: -18px; width: 30px; height: 16px; color: var(--ink); pointer-events: none; }
 .pop { transform: scale(0); transition: transform .45s cubic-bezier(.2, 1.5, .4, 1); }
 .pop.in { transform: scale(1); }
-.mini.street { height: 190px; }
+.mini.street { height: 168px; }
 .tok .tape { fill: none; stroke: var(--panel); stroke-width: 1.4; opacity: .7; }
 .ptl { display: block; width: 100%; height: auto; margin: 4px 0 6px; overflow: visible; }
 .ptl-t { font: 10px var(--body); fill: var(--muted); }
@@ -439,3 +439,5 @@ section#built > .roles { margin-top: 22px; }
 @media (max-width: 640px) {
   .route-van { width: 24px; height: 13px; top: -15px; }
 }
+.replay.in-stub { position: static; margin-left: auto; font-size: 12px; padding: 1px 10px; }
+.route-van { width: 28px; height: 14px; top: -16px; }
