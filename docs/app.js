@@ -497,7 +497,7 @@
     document.querySelectorAll(".deco").forEach(function (d) {
       if (RM) return;
       d.classList.add("wait");
-      onView(d, function () { setTimeout(function () { d.classList.remove("wait"); }, 300); });
+      onView(d, function () { setTimeout(function () { d.classList.remove("wait"); d.classList.add("play"); }, 300); });
     });
   }
 
