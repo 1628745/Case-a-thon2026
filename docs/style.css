@@ -483,40 +483,26 @@ section#built > .roles { margin-top: 22px; }
 }
 @media (max-width: 1100px) { .deco { display: none; } }
 @media (max-width: 640px) { .street-end { padding: 0 16px; } }
-/* Part 2 decoration: scanner gate */
-.sg-belt { fill: var(--muted); opacity: .55; }
-.sg-roll { fill: var(--line); }
-.sg-parcel rect:first-child, .sg-bad rect:first-child { fill: var(--tote); }
-.sg-tape { stroke: #1B2B3A; stroke-opacity: .16; stroke-width: 6; }
-.sg-ok { fill: var(--pass); }
-.sg-ok-m { fill: none; stroke: var(--floor); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.sg-gate rect { fill: var(--ink); }
-.sg-beam { fill: var(--tote); opacity: .22; }
-.sg-light { fill: var(--pass); }
-.sg-x-bg { fill: #F4F7F8; }
-.sg-x { stroke: var(--lq); stroke-width: 2.6; stroke-linecap: round; }
-.sg-chute { fill: var(--line); }
-.sg-bin { fill: none; stroke: var(--lq); stroke-width: 2.5; stroke-dasharray: 6 4; stroke-linejoin: round; }
-.sg-bin-t { font: 700 12px var(--body); fill: var(--lq); }
-.sg-bad { transform: translate(78px, 92px) rotate(8deg); transform-box: fill-box; transform-origin: 50% 50%; }
-@media (prefers-reduced-motion: no-preference) {
-  .deco.wait .sg-bad { transform: translate(-120px, 0); }
-  .deco.wait .sg-out { transform: translate(-190px, 0); }
-  .deco.wait .sg-wait { transform: translate(-90px, 0); }
-  .deco.play .sg-bad { animation: sg-catch 2.6s cubic-bezier(.4, 0, .2, 1) both; }
-  .deco.play .sg-o1 { animation: sg-ride 1.9s cubic-bezier(.2, .7, .2, 1) .15s both; }
-  .deco.play .sg-o2 { animation: sg-ride 1.9s cubic-bezier(.2, .7, .2, 1) both; }
-  .deco.play .sg-wait { animation: sg-wait 2.2s cubic-bezier(.2, .7, .2, 1) .5s both; }
-  .deco.play .sg-light { animation: sg-flash 2.6s linear both; }
-  .deco.play .sg-ok { animation: sg-pop 2.4s ease both; }
-}
-@keyframes sg-catch {
-  0% { transform: translate(-120px, 0); }
-  42% { transform: translate(0, 0); }
-  58% { transform: translate(0, 0); }
-  100% { transform: translate(78px, 92px) rotate(8deg); }
-}
-@keyframes sg-ride { from { transform: translate(-190px, 0); } to { transform: translate(0, 0); } }
-@keyframes sg-wait { from { transform: translate(-90px, 0); } to { transform: translate(0, 0); } }
-@keyframes sg-flash { 0%, 40% { fill: var(--pass); } 44%, 58% { fill: var(--fail); } 62%, 100% { fill: var(--pass); } }
-@keyframes sg-pop { 0%, 75% { opacity: 0; } 100% { opacity: 1; } }
+/* Part 2 decoration: city map, van follows the streets */
+.rm-land { fill: color-mix(in srgb, var(--stale) 12%, var(--panel)); }
+.rm-water { fill: color-mix(in srgb, var(--ref) 38%, var(--panel)); }
+.rm-park { fill: color-mix(in srgb, var(--stale) 30%, var(--panel)); }
+.rm-tree { fill: var(--stale); }
+.rm-b1 { fill: color-mix(in srgb, var(--tote) 55%, var(--panel)); }
+.rm-b2 { fill: color-mix(in srgb, var(--lq) 40%, var(--panel)); }
+.rm-b3 { fill: color-mix(in srgb, var(--ref) 40%, var(--panel)); }
+.rm-road-o { fill: none; stroke: color-mix(in srgb, var(--ink) 25%, var(--panel)); stroke-width: 15; stroke-linecap: round; }
+.rm-road { fill: none; stroke: var(--panel); stroke-width: 12; stroke-linecap: round; }
+.rm-lane { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 5 6; }
+.rm-route-base { fill: none; stroke: var(--tote); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 7; }
+.rm-trail { fill: none; stroke: var(--tote); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.rm-start { fill: var(--ref); stroke: var(--panel); stroke-width: 3; }
+.rm-start-i { fill: var(--panel); }
+.rm-pin { fill: var(--lq); stroke: var(--panel); stroke-width: 2; }
+.rm-pin-in { fill: var(--panel); }
+.rm-shadow { fill: #000; opacity: .18; }
+.rm-van { fill: var(--tote); stroke: #1B2B3A; stroke-width: 1.6; }
+.rm-glass { fill: #1B2B3A; }
+.rm-roof { fill: #fff; opacity: .45; }
+.rm-tag { fill: var(--pass); }
+.rm-tag-t { font: 700 11px var(--body); fill: var(--floor); }

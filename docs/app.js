@@ -499,6 +499,24 @@
       d.classList.add("wait");
       onView(d, function () { setTimeout(function () { d.classList.remove("wait"); d.classList.add("play"); }, 300); });
     });
+    // Part 2 map: the van follows the route path, turning with the road; the trail fills in behind it
+    var trail = $("rm-trail"), van = $("rm-van"), done = $("rm-done");
+    if (!trail || !van) return;
+    var L = trail.getTotalLength();
+    trail.style.strokeDasharray = L + " " + L;
+    function at(f) {
+      var l = f * L, p = trail.getPointAtLength(l), q = trail.getPointAtLength(Math.min(L, l + 1)), r = trail.getPointAtLength(Math.max(0, l - 1));
+      var ang = Math.atan2(q.y - r.y, q.x - r.x) * 180 / Math.PI;
+      van.setAttribute("transform", "translate(" + p.x.toFixed(1) + "," + p.y.toFixed(1) + ") rotate(" + ang.toFixed(1) + ")");
+      trail.style.strokeDashoffset = (L - l).toFixed(1);
+    }
+    if (RM) { at(1); done.classList.add("in"); return; }
+    at(0);
+    onView(van.ownerSVGElement.parentNode, function () {
+      setTimeout(function () {
+        tween(4200, function (p) { at(p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2); }, function () { done.classList.add("in"); });
+      }, 350);
+    });
   }
 
   // ------------------------------------------------------------ 2 sorting line (signature)

@@ -171,22 +171,19 @@
 
 <!-- 2 WHAT WE BUILT -->
 <section class="part" id="built" aria-labelledby="built-h">
-  <div class="deco" aria-hidden="true"><svg viewBox="0 0 300 226" id="deco-guard">
-    <path d="M176 112 206 152h40l-24-40z" class="sg-chute"/>
-    <path d="M196 150h76l-8 54h-60z" class="sg-bin"/>
-    <text x="234" y="222" text-anchor="middle" class="sg-bin-t">set aside, not deleted</text>
-    <rect x="6" y="106" width="288" height="10" rx="5" class="sg-belt"/>
-    <circle cx="18" cy="121" r="4" class="sg-roll"/><circle cx="40" cy="121" r="4" class="sg-roll"/><circle cx="62" cy="121" r="4" class="sg-roll"/><circle cx="84" cy="121" r="4" class="sg-roll"/><circle cx="106" cy="121" r="4" class="sg-roll"/><circle cx="128" cy="121" r="4" class="sg-roll"/><circle cx="150" cy="121" r="4" class="sg-roll"/><circle cx="172" cy="121" r="4" class="sg-roll"/><circle cx="194" cy="121" r="4" class="sg-roll"/><circle cx="216" cy="121" r="4" class="sg-roll"/><circle cx="238" cy="121" r="4" class="sg-roll"/><circle cx="260" cy="121" r="4" class="sg-roll"/><circle cx="282" cy="121" r="4" class="sg-roll"/>
-    <g class="sg-parcel sg-wait"><rect x="56" y="78" width="34" height="28" rx="3"/><path d="M73 78v28" class="sg-tape"/></g>
-    <g class="sg-parcel sg-out sg-o1"><rect x="190" y="78" width="34" height="28" rx="3"/><path d="M207 78v28" class="sg-tape"/><g transform="translate(222 80)"><circle r="8" class="sg-ok"/><path d="M-4 0l3 3 5-6" class="sg-ok-m"/></g></g>
-    <g class="sg-parcel sg-out sg-o2"><rect x="244" y="78" width="34" height="28" rx="3"/><path d="M261 78v28" class="sg-tape"/><g transform="translate(276 80)"><circle r="8" class="sg-ok"/><path d="M-4 0l3 3 5-6" class="sg-ok-m"/></g></g>
-    <g class="sg-gate">
-      <rect x="126" y="34" width="10" height="72" rx="3"/><rect x="164" y="34" width="10" height="72" rx="3"/>
-      <rect x="120" y="28" width="60" height="14" rx="4"/>
-    </g>
-    <rect x="136" y="42" width="28" height="64" class="sg-beam"/>
-    <circle cx="150" cy="35" r="3.6" class="sg-light"/>
-    <g class="sg-bad"><rect x="133" y="78" width="34" height="28" rx="3"/><path d="M150 78v28" class="sg-tape"/><rect x="139" y="85" width="22" height="14" rx="2" class="sg-x-bg"/><path d="M145 88l10 8M155 88l-10 8" class="sg-x"/></g>
+  <div class="deco" aria-hidden="true"><svg viewBox="0 0 300 226" id="deco-map">
+    <rect x="2" y="2" width="296" height="222" rx="18" class="rm-land"/>
+    <path d="M2 148C50 136 84 170 132 156S216 138 298 160V178C220 158 180 182 132 174S52 154 2 166z" class="rm-water"/>
+    <rect x="142" y="62" width="66" height="46" rx="8" class="rm-park"/><circle cx="152" cy="74" r="6" class="rm-tree"/><circle cx="170" cy="88" r="7" class="rm-tree"/><circle cx="190" cy="72" r="5.5" class="rm-tree"/><circle cx="198" cy="96" r="6" class="rm-tree"/><circle cx="160" cy="100" r="5" class="rm-tree"/><rect x="52" y="24" width="30" height="18" rx="4" class="rm-b1"/><rect x="88" y="24" width="32" height="18" rx="4" class="rm-b2"/><rect x="142" y="24" width="66" height="18" rx="4" class="rm-b3"/><rect x="232" y="24" width="48" height="18" rx="4" class="rm-b2"/><rect x="52" y="62" width="66" height="46" rx="4" class="rm-b3"/><rect x="232" y="62" width="48" height="22" rx="4" class="rm-b1"/><rect x="232" y="90" width="48" height="18" rx="4" class="rm-b2"/><rect x="14" y="62" width="18" height="46" rx="4" class="rm-b2"/><rect x="14" y="24" width="18" height="18" rx="4" class="rm-b1"/><rect x="52" y="200" width="66" height="10" rx="4" class="rm-b1"/><rect x="142" y="200" width="66" height="10" rx="4" class="rm-b2"/><rect x="232" y="200" width="48" height="10" rx="4" class="rm-b3"/><rect x="14" y="200" width="18" height="10" rx="4" class="rm-b3"/>
+    <path d="M10 50H290M10 120H290M10 190H290M40 14V212M130 14V212M220 14V212" class="rm-road-o"/>
+    <path d="M10 50H290M10 120H290M10 190H290M40 14V212M130 14V212M220 14V212" class="rm-road"/>
+    <path d="M10 50H290M10 120H290M10 190H290M40 14V212M130 14V212M220 14V212" class="rm-lane"/>
+    <path d="M40 190H120Q130 190 130 180V130Q130 120 140 120H210Q220 120 220 110V60Q220 50 230 50H266" class="rm-route-base"/>
+    <path d="M40 190H120Q130 190 130 180V130Q130 120 140 120H210Q220 120 220 110V60Q220 50 230 50H266" class="rm-trail" id="rm-trail"/>
+    <g transform="translate(40 190)"><circle r="9" class="rm-start"/><rect x="-4" y="-4" width="8" height="8" rx="1.5" class="rm-start-i"/></g>
+    <g transform="translate(268 48)"><path d="M0 0c-8-9-12-14-12-20a12 12 0 0 1 24 0c0 6-4 11-12 20z" class="rm-pin"/><circle cy="-20" r="4.5" class="rm-pin-in"/></g>
+    <g id="rm-van"><ellipse cx="1" cy="2" rx="13" ry="7" class="rm-shadow"/><rect x="-12" y="-6.5" width="24" height="13" rx="3.5" class="rm-van"/><rect x="5" y="-5.5" width="4.5" height="11" rx="1.2" class="rm-glass"/><rect x="-9" y="-4" width="11" height="8" rx="1.5" class="rm-roof"/></g>
+    <g transform="translate(262 14)"><g class="pop" id="rm-done"><rect x="-34" y="-9" width="68" height="18" rx="9" class="rm-tag"/><text y="4.5" text-anchor="middle" class="rm-tag-t">Delivered</text></g></g>
   </svg></div>
   <div class="part-head">
     <div class="lane" data-lane="truck" data-n="2" aria-hidden="true"></div>
