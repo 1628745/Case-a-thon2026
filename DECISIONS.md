@@ -116,3 +116,9 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 
 ## L3: synthetic sample
 - `scripts/make_sample.py` draws every value from a seeded generator (no LaDe rows read). 45 couriers x 8 weeks, about 23k rows (3.5 MB), Shanghai-area made-up coordinates, `city = SYNTHETIC`. Planted a few observed issues (0.15% zero durations, 0.2% late GPS fixes, 0.2% far fixes) so the audit and L1 have real issues to show. No same-minute bursts or duplicate ids are planted, so on the sample those come only from the poison dial.
+
+## L4: worker
+- Playwright 1.64.1 installed into `.venv`; `python -m playwright install chromium` put the browser in `~/Library/Caches/ms-playwright` (the standard location named by LAB_PLAN.md section 7). Its profile lives in `.cache/pw-profile` (git-ignored) so the Pyodide download stays cached between runs.
+- Cancel = the page terminates the worker and starts a fresh one (a busy worker cannot read messages). Python errors are classed: `data` (a `LabError`, worded for the user), `memory`, `python` (traceback in `detail`), `load` (CDN or WebAssembly failure -> cached fallback offered).
+- Results leave Python as strict JSON (`lab.to_json`: NaN/inf -> null).
+- Added `lab.run_sweep` (P3 dose-response) now so the worker protocol is final; the UI comes in L8.

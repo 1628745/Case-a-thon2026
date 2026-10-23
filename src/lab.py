@@ -450,6 +450,28 @@ def _summarize(runs, k, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, 
             "human": human, "versions": versions(), "quarantine": quarantine}
 
 
+def run_sweep(base, lcfg, split, opt, shares=(0.0, 0.2, 0.4, 0.6), progress=None):
+    """Dose-response on this file: sloppy-courier share -> MAE Guard off / on (bulk scans + duplicates)."""
+    prog = progress or (lambda step, pct, msg: None)
+    seed = int(opt.get("seed", 0))
+    g = copy.deepcopy(lcfg["guard"])
+    keep = cap_couriers(base, split["train_weeks"], BUDGETS[opt.get("budget", "quick")]["row_cap"], seed)
+    pts = []
+    for i, sh in enumerate(shares):
+        c = copy.deepcopy(lcfg)
+        c["degrade"]["low_quality"]["sloppy_share"] = float(sh)
+        feed = build_lab_feed(base, ["bulk", "dup"] if sh > 0 else [], seed, c)[0]
+        row = {"share": float(sh)}
+        for j, guard in enumerate([False, True]):
+            prog("sweep", int(100 * (2 * i + j) / (2 * len(shares))), f"Sloppy share {100 * sh:.0f}%, Guard {'on' if guard else 'off'}")
+            m, _ = one_run("sweep", feed, c, g, split, seed, guard, None, keep)
+            row["mae_on" if guard else "mae_off"] = m["mae"]
+            row["p90_on" if guard else "p90_off"] = m["p90_err"]
+        pts.append(row)
+    prog("done", 100, "Done")
+    return {"schema": SCHEMA + "/sweep", "points": pts, "seed": seed, "budget": opt.get("budget", "quick")}
+
+
 # ---------------------------------------------------------------- explain a prediction
 
 def _contrib(mdl, x):
@@ -506,6 +528,28 @@ def explain(k, off_key, on_key, cs, base, split):
                     "p80_on": float(on["p80"][i]), "reasons": {n_: bool(r[q]) for q, n_ in enumerate(reason_names)},
                     "decision": "defer" if defer[i] else "approve"})
     return out
+
+
+def to_json(obj):
+    """Strict JSON (non-finite floats -> null) so the browser's JSON.parse accepts it."""
+    import json
+    import math
+
+    def clean(o):
+        if isinstance(o, float):
+            return o if math.isfinite(o) else None
+        if isinstance(o, dict):
+            return {str(k): clean(v) for k, v in o.items()}
+        if isinstance(o, (list, tuple)):
+            return [clean(v) for v in o]
+        if isinstance(o, (np.integer,)):
+            return int(o)
+        if isinstance(o, (np.floating,)):
+            return clean(float(o))
+        if isinstance(o, np.bool_):
+            return bool(o)
+        return o
+    return json.dumps(clean(obj), allow_nan=False)
 
 
 def _num(v):

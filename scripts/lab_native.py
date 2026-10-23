@@ -54,7 +54,7 @@ def main():
     name = a.data if a.data in DATA else "file"
     out = os.path.join(ROOT, "logs", "lab", f"native_{name}_{a.preset}.json")
     with open(out, "w") as f:
-        json.dump(res, f, indent=1)
+        json.dump(json.loads(lab.to_json(res)), f, indent=1)
     for m in res["runs"]:
         print(f"{m['key']:13s} MAE {m['mae']:7.2f}  P90 {m['p90_err']:7.1f}  miss {m['miss_rate']:.3f}  "
               f"promise {m['promise_mean']:6.1f}  defer {m['defer_rate']:.3f}  n_train {m['n_train']:6d}  train {m['train_s']:.2f}s")
@@ -68,7 +68,7 @@ def main():
         pub["data_name"] = "LaDe Yantai (delivery_yt.csv)"
         cp = os.path.join(ROOT, "docs", "data", "lab_cached_yantai.json")
         with open(cp, "w") as f:
-            json.dump(pub, f, indent=1)
+            json.dump(json.loads(lab.to_json(pub)), f, indent=1)
         print("wrote", os.path.relpath(cp, ROOT))
     print("wrote", os.path.relpath(out, ROOT))
 
