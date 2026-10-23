@@ -140,3 +140,7 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 ## L8: P3
 - **New-city card goes on the lab page, not index.html.** LAB_PLAN constraint 4 allows only the nav link (and key 5) on the narrative page, which takes precedence over P3's "card in #analysis". The card reads `lab_cached_yantai.json` (92% recovered).
 - The sweep always uses the Quick budget and bulk scans + duplicates, whatever the dial says, so it reproduces the study's dose-response design.
+
+## L9: nav link
+- index.html: one `<a class="ghost tryit" href="lab.html">Try it</a>` after the route nav (inside the nav would break its 3-stop layout and the van), and the keys hint now mentions 5. app.js: key 5 goes to lab.html. style.css: one new `.tryit` rule appended, no existing rule changed.
+- The smoke test compares against a baseline recorded on the unchanged page (`logs/smoke_baseline.json`: 4 sections, 28 SVGs, 10 chart SVGs). Its 390 px check reloads the page, because index.html lays out its decorations at load.

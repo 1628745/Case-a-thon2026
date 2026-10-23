@@ -1,6 +1,6 @@
 # LAB_PROGRESS
 
-Status: IN PROGRESS (L9).
+Status: IN PROGRESS (L10).
 
 origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged at DONE). Resume at the first unchecked step. Blockers (if any) go here at the top.
 
@@ -14,7 +14,7 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - [x] L6 P2 features
 - [x] L7 Yantai parity, cached fallback, performance budgets
 - [x] L8 P3 (if time)
-- [ ] L9 Nav link, regression smoke test, screenshots
+- [x] L9 Nav link, regression smoke test, screenshots
 - [x] L10 Review, LAB_TESTING.md, local server running, DONE
 
 ## Log
@@ -28,3 +28,4 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - 2026-10-23 L6: P2 covered by e2e: explain (5 examples, TreeSHAP waterfalls + L3 card), release courier + rerun (diff shown), downloads lab_report.json / quarantine.csv / model_card.md validated (synthetic, clean, Yantai), compute vs human tiles.
 - 2026-10-23 L7: Yantai parity (Sloppy 20%, Quick, seed 0) browser vs native MAE: reference 95.74 vs 95.74, poisoned off 136.23 vs 136.23, poisoned on 99.08 vs 98.78 (0.3%; LightGBM 4.6 vs 4.7). Cached fallback docs/data/lab_cached_yantai.json (aggregates only). Budgets (headless Chromium, this Mac): cold Python load 5.9 s (fresh profile; <= 40), cached 4.0 s (<= 5), Yantai audit 0.1 s (<= 15), Yantai default run 10.5 s (<= 90), synthetic 3.3 s (<= 45), Chongqing full file 48 s end to end incl. audit (<= 300; kept last 7 weeks, 931k rows read, 120k training cap).
 - 2026-10-23 L8: P3 sweep (synthetic 0/20/40/60%: MAE off 171/196/233/269, on 171/172/175/178) and new-city card (lab page). e2e lab 64/64.
+- 2026-10-23 L9: 'Try it' header link + key 5 on index.html (+1 CSS rule, keys hint updated). Smoke 11/11: same 4 sections, 28 SVGs, 10 charts as the pre-change baseline, zero console errors, no overflow at 1440/390, link and key 5 open lab.html. Screenshots in logs/lab_screens/.

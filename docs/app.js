@@ -917,6 +917,7 @@
     var map = { "0": "top", "1": "poisons", "2": "built", "3": "analysis", "4": "walk" };
     document.addEventListener("keydown", function (e) {
       if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target || {}).tagName || "")) return;
+      if (e.key === "5") { window.location.href = "lab.html"; return; }
       var id = map[e.key];
       if (!id) return;
       e.preventDefault();

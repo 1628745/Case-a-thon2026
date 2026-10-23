@@ -504,3 +504,6 @@ section#built > .roles { margin-top: 22px; }
 .rm-roof { fill: #fff; opacity: .45; }
 .rm-tag { fill: var(--pass); }
 .rm-tag-t { font: 700 11px var(--body); fill: var(--floor); }
+
+/* "Try it" link to the lab page (added in phase 2) */
+.tryit { text-decoration: none; font-weight: 700; white-space: nowrap; border-color: var(--tote); }

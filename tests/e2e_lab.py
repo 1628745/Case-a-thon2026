@@ -418,6 +418,14 @@ def smoke_check(ctx):
         page.close()
         return
     page.screenshot(path=os.path.join(SHOTS, "index_1440.png"))
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.reload()  # index.html lays out its decorations at load; a live 1440 -> 390 resize isn't what a phone sees
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(1500)
+    no_overflow(page, "index 390")
+    check("index: Try it link visible at 390 px", page.locator("header a.tryit").is_visible())
+    page.screenshot(path=os.path.join(SHOTS, "index_390.png"))
+    page.set_viewport_size({"width": 1440, "height": 900})
     check("index: Try it link in the header", info["tryit"])
     page.click('header a[href="lab.html"]')
     page.wait_for_url("**/lab.html")
