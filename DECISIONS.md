@@ -128,3 +128,6 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 - The cached Yantai result (`docs/data/lab_cached_yantai.json`, from `lab_native.py --cached`) is offered both when Python fails and as a "No time?" link in step 1. It has no feature values and no per-row quarantine list, and its courier hashes use a discarded random salt.
 - The test server sends `Cache-Control: no-store` so tests always run against the current files; the Pyodide download stays cached in `.cache/pw-profile`.
 - sklearn's "X does not have valid feature names" warnings are silenced in the worker (console noise only; the model inputs are the same arrays as natively).
+
+## L6: P2 features
+- Built together with L5 (same files); L6 is ticked separately once the e2e covered each feature. `lab_report.json` drops lng/lat values from the explain examples and leaves the per-row quarantine list to `quarantine.csv`.
