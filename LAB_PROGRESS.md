@@ -1,6 +1,6 @@
 # LAB_PROGRESS
 
-Status: IN PROGRESS (L7).
+Status: IN PROGRESS (L8).
 
 origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged at DONE). Resume at the first unchecked step. Blockers (if any) go here at the top.
 
@@ -12,7 +12,7 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - [x] L4 Web Worker with Pyodide
 - [x] L5 lab.html: steps 1-5 + P1 results
 - [x] L6 P2 features
-- [ ] L7 Yantai parity, cached fallback, performance budgets
+- [x] L7 Yantai parity, cached fallback, performance budgets
 - [ ] L8 P3 (if time)
 - [ ] L9 Nav link, regression smoke test, screenshots
 - [x] L10 Review, LAB_TESTING.md, local server running, DONE
@@ -26,3 +26,4 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - 2026-10-23 L4: docs/lab-worker.js (Pyodide 0.29.4: pandas 2.3.3, LightGBM 4.6.0). tests/e2e_lab.py worker: 7/7 (same schema as native; sample MAE within 0.1% of native). Cached load 3.9 s, audit 0.14 s, sloppy run 3.2 s.
 - 2026-10-23 L5: lab.html/lab.css/lab.js (steps 1-5, P1 results, cached fallback). tests/e2e_lab.py lab 63/63: synthetic default run 3.3 s (budget 45 s), clean run, Yantai audit 0.1 s, Yantai run 10.5 s (budget 90 s), zero console errors, no overflow at 1440/390.
 - 2026-10-23 L6: P2 covered by e2e: explain (5 examples, TreeSHAP waterfalls + L3 card), release courier + rerun (diff shown), downloads lab_report.json / quarantine.csv / model_card.md validated (synthetic, clean, Yantai), compute vs human tiles.
+- 2026-10-23 L7: Yantai parity (Sloppy 20%, Quick, seed 0) browser vs native MAE: reference 95.74 vs 95.74, poisoned off 136.23 vs 136.23, poisoned on 99.08 vs 98.78 (0.3%; LightGBM 4.6 vs 4.7). Cached fallback docs/data/lab_cached_yantai.json (aggregates only). Budgets (headless Chromium, this Mac): cold Python load 5.9 s (fresh profile; <= 40), cached 4.0 s (<= 5), Yantai audit 0.1 s (<= 15), Yantai default run 10.5 s (<= 90), synthetic 3.3 s (<= 45), Chongqing full file 48 s end to end incl. audit (<= 300; kept last 7 weeks, 931k rows read, 120k training cap).

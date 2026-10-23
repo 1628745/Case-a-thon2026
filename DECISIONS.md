@@ -131,3 +131,8 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 
 ## L6: P2 features
 - Built together with L5 (same files); L6 is ticked separately once the e2e covered each feature. `lab_report.json` drops lng/lat values from the explain examples and leaves the per-row quarantine list to `quarantine.csv`.
+
+## L7: parity, fallback, budgets
+- **Full week redefined:** data on all 7 days, each day >= 5% of the median daily volume. The first rule (dates inside the file's min-max range) made Chongqing unusable: a handful of stray November/December accept dates pushed the "last full week" into an empty November. Yantai and the sample keep the same split as before.
+- Parity: browser and native agree to 0.3% MAE on Yantai (the Guard-on run differs slightly: LightGBM 4.6 vs 4.7 and float order). No budget was missed, so the Quick budget stays at 150 trees / 31 leaves / 120k rows.
+- The cold-load time (5.9 s) was measured with a fresh browser profile on a fast connection; on a slow connection the ~30 MB download dominates. Progress is shown either way.

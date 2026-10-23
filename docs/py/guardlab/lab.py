@@ -90,12 +90,16 @@ def read_lab_csv(src):
 
 
 def week_layout(at):
-    """at: parsed accept times. -> week0 Sunday, full weeks (contiguous range), per-week rows."""
-    t0, t1 = at.min().normalize(), at.max().normalize()
+    """at: parsed accept times. -> week0 Sunday, full weeks, per-week rows. A full week has data on all
+    7 days (each day >= 5% of the median daily volume), so a few stray late dates can't become the test week."""
+    t0 = at.min().normalize()
     week0 = t0 - pd.Timedelta(days=(t0.dayofweek + 1) % 7)  # Sunday on or before
-    wk = ((at.dt.normalize() - week0).dt.days // 7)
+    days = (at.dt.normalize() - week0).dt.days
+    wk = days // 7
     n = int(wk.max()) + 1
-    full = [w for w in range(n) if week0 + pd.Timedelta(days=7 * w) >= t0 and week0 + pd.Timedelta(days=7 * w + 6) <= t1]
+    per_day = np.bincount(days.to_numpy(np.int64), minlength=7 * n)
+    floor = 0.05 * np.median(per_day[per_day > 0])
+    full = [w for w in range(n) if (per_day[7 * w:7 * w + 7] >= max(1.0, floor)).all()]
     counts = wk.value_counts().sort_index()
     rows = [{"week": int(w), "start": str((week0 + pd.Timedelta(days=7 * w)).date()), "rows": int(counts.get(w, 0)),
              "full": w in full} for w in range(n)]

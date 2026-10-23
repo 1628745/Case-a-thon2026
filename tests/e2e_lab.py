@@ -3,6 +3,7 @@
 .venv/bin/python tests/e2e_lab.py worker   # lab-worker.js alone: audit + run -> same schema as src/lab.py
 .venv/bin/python tests/e2e_lab.py lab      # lab.html: synthetic (default + clean), Yantai via set_input_files
 .venv/bin/python tests/e2e_lab.py smoke    # index.html regression smoke test + the "Try it" link
+.venv/bin/python tests/e2e_lab.py budgets  # cold Pyodide load (fresh profile) + Chongqing full file
 .venv/bin/python tests/e2e_lab.py all      # everything (+ screenshots in logs/lab_screens/)
 Writes logs/e2e_lab.json with timings. Exit code 0 only if every check passed.
 """
@@ -146,6 +147,8 @@ def main(what):
             if what in ("smoke", "all"):
                 smoke_check(ctx)
             ctx.close()
+            if what in ("budgets", "all"):
+                budget_check(p)
     finally:
         srv.shutdown()
     ok = all(c["ok"] for c in REPORT["checks"])
@@ -330,6 +333,54 @@ def lab_check(ctx, p):
     check("cached fallback: badge + results", page.locator("#cached-badge").is_visible() and page.locator("#kpis .kpi").count() == 4)
     check("lab: zero console errors", not errs, errs[:5])
     page.close()
+
+
+def budget_check(p):
+    import shutil
+    import tempfile
+    tmp = tempfile.mkdtemp(dir=os.path.join(ROOT, ".cache"))
+    try:
+        ctx = p.chromium.launch_persistent_context(tmp, headless=True, viewport={"width": 1440, "height": 900})
+        page = ctx.new_page()
+        errs = []
+        console_watch(page, errs)
+        t = time.time()
+        page.goto(BASE + "/lab.html")
+        page.wait_for_function("window.__lab && window.__lab.ready", timeout=300_000)
+        cold = time.time() - t
+        REPORT["timings"]["cold_load_s"] = cold
+        check("budget: first (cold) Python load <= 40 s", cold <= 40, f"{cold:.1f} s")
+        page.reload()
+        t = time.time()
+        page.wait_for_function("window.__lab && window.__lab.ready", timeout=120_000)
+        warm = time.time() - t
+        REPORT["timings"]["warm_load_s"] = warm
+        check("budget: cached Python load <= 5 s", warm <= 5, f"{warm:.1f} s")
+        cq = os.path.join(ROOT, "data", "raw", "delivery_cq.csv")
+        if os.path.exists(cq):
+            page.evaluate("window.__labPrev = null")
+            t = time.time()
+            page.set_input_files("#file", cq)
+            page.wait_for_function("window.__lab.audit", timeout=300_000)
+            a = page.evaluate("JSON.parse(JSON.stringify(window.__lab.audit))")
+            REPORT["timings"]["cq_audit_s"] = time.time() - t
+            if a.get("ok"):
+                page.click("#run")
+                page.wait_for_function("(window.__lab.result && !window.__lab.running) || document.getElementById('run-err').innerText.length > 0",
+                                       timeout=330_000)
+                el = time.time() - t
+                err = page.locator("#run-err").inner_text()
+                REPORT["timings"]["cq_total_s"] = el
+                REPORT["cq"] = {"error": err, "runs": page.evaluate("window.__lab.result ? window.__lab.result.runs.map(r => [r.key, r.mae, r.n_train]) : null"),
+                                "data": page.evaluate("window.__lab.result ? window.__lab.result.data : null")}
+                check("budget: Chongqing completes <= 5 min or refuses clearly", (el <= 300 and not err) or (err and "memory" in err.lower()),
+                      f"{el:.0f} s; {err[:120] or 'completed'}")
+            else:
+                check("budget: Chongqing refused clearly", bool(a.get("problems")), a.get("problems"))
+        check("budget: zero console errors", not errs, errs[:3])
+        ctx.close()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def smoke_check(ctx):
