@@ -77,3 +77,8 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 - Console models are the week-25 retrain of low_quality seed 0 (Guard off/on), retrained by `export_site` with the frozen config. LightGBM names array-fit features `Column_i`; the export writes the real names (same order).
 - Site verification used the Claude desktop app's built-in browser (JS checks for console errors, chart rendering, overflow at 1440x900 and 375 px) instead of installing Playwright, which would download a browser outside the repo.
 - GitHub Pages enabled via `gh api` (repo is public): https://1628745.github.io/Case-a-thon2026/ from `main` `/docs`; `docs/.nojekyll` added.
+
+# Phase 2: "Try it" live demo
+
+## L0
+- Branch `live-demo` from `main` at 0a2bb7a. The modified CLAUDE.md and the new LAB_*.md files (written by the user before the run) are committed on this branch as the first commit.

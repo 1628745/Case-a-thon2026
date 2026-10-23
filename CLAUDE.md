@@ -1,38 +1,32 @@
-# Case-a-thon 2026: autonomous build
+# Case-a-thon 2026: phase 2, "Try it" live demo (autonomous build)
 
-You are building the complete W&M AI Club Case-a-thon 2026 submission (case: "Unintentional Data Poisoning", dataset: LaDe last-mile delivery) in this repo, **unattended**. The user is asleep or away. They chose this; do not wait for them.
+Phase 1 (study, results, narrative site) is DONE: see PROGRESS.md, DISCOVERY.md, DECISIONS.md, PLAN.md. The current task is the live demo page described in **LAB_PLAN.md**. Work **unattended**: the user is away and will test on localhost when you finish.
 
-- `PLAN.md` is the full spec: decisions, experiment design, Guard, website, execution order, definition of done.
-- `PROGRESS.md` is the step log. **Read both at the start of every session and after every context compaction**, then resume at the first unchecked step.
-- `DECISIONS.md` (you create it) records every judgment call: what, why, alternatives.
+Read `LAB_PLAN.md` and `LAB_PROGRESS.md` at the start of every session and after every context compaction, then resume at the first unchecked step.
 
 ## Operating rules
 
-1. Work through PLAN.md "Execution order" steps 0-12 in order. Each step's "must pass" checks must be run, with their output shown, before you tick it.
-2. **Do not ask the user questions and do not stop to report progress.** When a choice is needed, pick per PLAN.md defaults, log it in DECISIONS.md, and continue. Reviews in PLAN.md are asynchronous: write the review document, then keep going.
-3. Stop only for: data files missing or corrupted; `git push` still failing after three different fixes; disk full. In that case write the blocker at the top of PROGRESS.md, commit locally, and stop.
-4. After every step: update PROGRESS.md, `git add` **explicit paths** (never `git add -A` or `git add .`), commit with a clear message, `git push`.
-5. **IMPORTANT: never commit raw or processed data.** `delivery_cq.csv` is 145 MB (GitHub rejects files over 100 MB) and LaDe's terms do not allow redistribution. Step 0 moves both CSVs to `data/raw/`, and `.gitignore` already covers `data/`, `*.csv`, `*.parquet` (except `results/*.parquet`), `.venv/`, `results/runs/`, `logs/`. Run `git status --short` before every commit and make sure no CSV or large file is staged.
-6. Long runs (anything over ~3 minutes): launch in the background with `nohup ... > logs/<name>.log 2>&1 &`, keep working on other steps (site skeleton, diagnostics code, docs), and check progress by reading the log and the runner's progress file. The runner must be resumable (skip finished runs).
-7. Keep the Mac awake: at session start, if `pgrep -x caffeinate` finds nothing, run `nohup caffeinate -dimsu > /dev/null 2>&1 &`.
-8. Stay inside this folder. No `sudo`, no deleting anything outside the repo, no global config changes. Install packages only into `.venv` (or a conda env named `lade`, see Environment).
-9. Scientific honesty: never tune on held-out weeks 22-25; never use injection labels as model features or Guard inputs (only to score detectors); keep chronological order; report failures on the site. If the Guard fails a scorecard line, say so.
-10. Context hygiene: keep command output short (`head`, `tail`, quiet flags, summaries). Before the freeze (step 9) and before the final push (step 12), run a review subagent on the diff against PLAN.md; fix only findings that affect correctness or stated requirements.
-11. Schedule: target all steps done by Thu 2026-10-22 23:00 ET; hard deadline Fri 2026-10-23 18:00 ET. If step 9 has not started by Thu 2026-10-22 14:00 ET, apply PLAN.md "Cut list" in order and log it.
+1. Work through LAB_PLAN.md section 8 (steps L0-L10) in order. Run each step's "must pass" checks and show their output before ticking it in LAB_PROGRESS.md.
+2. **IMPORTANT: never push.** No `git push`, no merging into `main`, no GitHub Pages or `gh` changes, no tags pushed. Work on the local branch `live-demo` and commit there after every step (explicit paths, never `git add -A` or `git add .`). The user will publish after testing.
+3. Do not ask the user questions and do not stop to report progress. Log judgment calls under a "Phase 2" heading in DECISIONS.md and continue.
+4. Stop only for: data files missing or corrupted; Pyodide or LightGBM-in-Pyodide impossible after three different fixes (then build the cached-result fallback, document it, and finish everything else); disk full. Write blockers at the top of LAB_PROGRESS.md.
+5. **Never commit data.** No LaDe rows, raw courier IDs or coordinates in git or in `docs/`. Only the generated synthetic sample (`docs/data/lab_sample.csv`) and aggregate JSON may be committed. Run `git status --short` before every commit.
+6. **Don't break the existing site.** `docs/index.html`, `docs/app.js`, `docs/style.css` were redesigned by a teammate; only add the "Try it" nav link (and an optional key `5`). The regression smoke test must pass.
+7. **Never tune the Guard on uploaded data.** Use the frozen `config.yaml` guard settings. Show results honestly, including when the Guard doesn't help.
+8. Keep the Mac awake: if `pgrep -x caffeinate` finds nothing, run `nohup caffeinate -dimsu > /dev/null 2>&1 &`.
+9. Long-running commands (over ~3 minutes) go in the background with logs in `logs/`; keep working meanwhile.
+10. Stay inside this folder. No `sudo`, no deleting outside the repo, no global config changes. Python packages go into `.venv`; Node packages (if needed) into a temp folder under `logs/` or `.cache/`, never into `docs/`.
+11. Context hygiene: keep command output short. Use a review subagent before finishing (LAB_PLAN.md section 7, item 6).
+12. Finish by leaving the local server running (`nohup .venv/bin/python -m http.server 8000 -d docs > logs/server.log 2>&1 &`), writing LAB_TESTING.md, and putting DONE at the top of LAB_PROGRESS.md. Your final message tells the user the URL to open and points to LAB_TESTING.md.
 
 ## Environment
 
-- macOS on Apple Silicon. Remote: https://github.com/1628745/Case-a-thon2026 (HTTPS; push credentials are in the macOS keychain and a push has already succeeded).
-- Python: `python3 -m venv .venv && source .venv/bin/activate` (Python >= 3.10). Install from `requirements.txt` and pin exact versions with `pip freeze` once working.
-- If `import lightgbm` fails (usually missing libomp): try `brew install libomp`; if that fails, use miniconda: `~/miniconda3/bin/conda create -y -n lade -c conda-forge python=3.11 lightgbm pandas pyarrow scikit-learn shap pyyaml joblib`; last resort, sklearn `HistGradientBoostingRegressor` (loss `absolute_error` / `quantile` with quantile=0.8). Record the choice in DECISIONS.md and MANIFEST.md.
-- Parallelism: `workers = max(1, os.cpu_count() // 3)`, threads per model = `max(1, os.cpu_count() // workers)`.
-- Node may or may not be installed; check `command -v node` (also `~/.nvm`). It is only needed to verify the in-browser model; PLAN.md gives a fallback.
-
-## Key paths
-
-- `data/raw/delivery_cq.csv`: main dataset (Chongqing). `data/raw/delivery_yt.csv`: small Yantai copy for smoke tests only.
-- `docs/`: the website, served by GitHub Pages from branch `main`, folder `/docs`.
+- macOS, Apple Silicon. Repo https://github.com/1628745/Case-a-thon2026 (public).
+- **git:** `/usr/bin/git` refuses to run (Xcode license not accepted). Prefix git commands with `DEVELOPER_DIR=/Library/Developer/CommandLineTools`, as in phase 1 (see DECISIONS.md step 0).
+- Python: `.venv` (Python 3.13, pandas 3.0.6, LightGBM 4.7.0). Browser code runs on Pyodide 0.29.4 (pandas 2.3.3, LightGBM 4.6.0): write code that works on both.
+- Data: `data/raw/delivery_cq.csv` (Chongqing), `data/raw/delivery_yt.csv` (Yantai, use for parity and E2E). Both git-ignored.
+- Node is installed (phase 1 ran `node scripts/check_models.js`).
 
 ## Done means
 
-Every item in PLAN.md "Definition of done" is true, the last commit is pushed, and PROGRESS.md says DONE at the top with a short summary for the team.
+Every item in LAB_PLAN.md section 9 "Definition of done" is true.
