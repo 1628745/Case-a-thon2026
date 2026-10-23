@@ -3,6 +3,8 @@
 *.csv
 !results/modification_log.csv
 !docs/data/weekly_metrics.csv
+# lab_sample.csv is SYNTHETIC (scripts/make_sample.py), no LaDe rows
+!docs/data/lab_sample.csv
 *.parquet
 !results/*.parquet
 # Per-run outputs stay local; only aggregates are committed
@@ -16,3 +18,5 @@ __pycache__/
 .ipynb_checkpoints/
 # OS
 .DS_Store
+# Downloads and temp tools (Pyodide lock file, Node packages)
+.cache/

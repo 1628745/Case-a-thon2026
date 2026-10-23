@@ -1,6 +1,6 @@
 # LAB_PROGRESS
 
-Status: IN PROGRESS (L3).
+Status: IN PROGRESS (L4).
 
 origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged at DONE). Resume at the first unchecked step. Blockers (if any) go here at the top.
 
@@ -8,7 +8,7 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - [x] L0 Branch live-demo, read the site and src, baseline tests
 - [x] L1 Importable core + build_lab.py + docs/py/guardlab + parity tests
 - [x] L2 Native lab experiment (lab_native.py) + result schema
-- [ ] L3 Synthetic sample
+- [x] L3 Synthetic sample
 - [ ] L4 Web Worker with Pyodide
 - [ ] L5 lab.html: steps 1-5 + P1 results
 - [ ] L6 P2 features
@@ -22,3 +22,4 @@ origin/main at L0: 0a2bb7ac0fd2341b5d267acd3347874b64b9bc70 (must be unchanged a
 - 2026-10-23 L0: caffeinate running; pull --ff-only: already up to date; branch live-demo created; pytest 19 passed (10.9 s).
 - 2026-10-23 L1: src refactors + src/lab.py + build_lab.py + docs/py/guardlab + tests/test_lab_parity.py; pytest 30 passed (13.6 s). Native Yantai sloppy-20% run 2.9 s.
 - 2026-10-23 L2: lab_native.py; synthetic + Yantai all presets run natively (Yantai sloppy 95.7/136.2/98.8 MAE, 92% recovered; end to end 3.5 s). Schema in DECISIONS.md.
+- 2026-10-23 L3: synthetic sample 23,143 rows / 3.5 MB, 8 full weeks, 45 couriers, 267 areas, P99 duration 36 h, city=SYNTHETIC; deterministic (same sha on rebuild); native sloppy run 1.1 s, Guard recovers 95%.

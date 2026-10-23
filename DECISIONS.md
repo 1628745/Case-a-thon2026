@@ -113,3 +113,6 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 - `quarantine`: columns [file_line, courier, reasons, note], rows
 - `timings`: inject_s, score_s, total_s (+ audit_s, prepare_s, end_to_end_s natively; load/audit/run seconds in the browser)
 - `versions`: python, pandas, numpy, lightgbm, platform; `config` (added by the caller): config_hash, guard_hash, guard
+
+## L3: synthetic sample
+- `scripts/make_sample.py` draws every value from a seeded generator (no LaDe rows read). 45 couriers x 8 weeks, about 23k rows (3.5 MB), Shanghai-area made-up coordinates, `city = SYNTHETIC`. Planted a few observed issues (0.15% zero durations, 0.2% late GPS fixes, 0.2% far fixes) so the audit and L1 have real issues to show. No same-minute bursts or duplicate ids are planted, so on the sample those come only from the poison dial.
