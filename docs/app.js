@@ -337,26 +337,25 @@
   var POISON = {
     history: function (svg) {
       var cfg = V.cfg, n = cfg.data.n_weeks, W = 340, cw = W / n, win = cfg.splits.window_weeks, dev = cfg.splits.dev;
-      for (var i = 0; i < n; i++) mk("rect", { x: i * cw + 0.5, y: 52, width: cw - 1, height: 14, rx: 1.5, style: "fill: var(--line)" }, svg);
-      [0, 4, 8, 12, 16, 20, 25].forEach(function (w) { mk("text", { x: w * cw + cw / 2, y: 82, "text-anchor": "middle", style: T, text: w }, svg); });
-      mk("text", { x: W, y: 98, "text-anchor": "end", style: T, text: "week" }, svg);
-      var rw = mk("rect", { y: 30, height: 10, rx: 2, style: "fill: var(--ref)" }, svg);
-      var sw = mk("rect", { y: 10, height: 10, rx: 2, style: "fill: var(--stale)" }, svg);
-      var tw = mk("rect", { y: 49, width: cw, height: 20, rx: 2, style: "fill: none; stroke: var(--ink); stroke-width: 2" }, svg);
-      var lr = mk("text", { y: 39, style: TB, text: "normal: last " + win + " weeks" }, svg);
-      var ls = mk("text", { y: 19, style: TB, text: "outdated: every past week" }, svg);
-      var tl = mk("text", { y: 114, "text-anchor": "middle", style: TB }, svg);
-      function at(t) {
-        var tt = Math.round(t);
-        rw.setAttribute("x", Math.max(0, tt - win) * cw); rw.setAttribute("width", Math.min(win, tt) * cw);
-        sw.setAttribute("x", 0); sw.setAttribute("width", tt * cw);
-        tw.setAttribute("x", tt * cw);
-        lr.setAttribute("x", tt * cw + cw + 4); ls.setAttribute("x", tt * cw + cw + 4);
-        if (tt > n - 9) { lr.setAttribute("x", Math.max(0, tt - win) * cw - 4); lr.setAttribute("text-anchor", "end"); ls.setAttribute("x", 2); ls.setAttribute("text-anchor", "start"); ls.setAttribute("y", 8); }
-        else { lr.setAttribute("text-anchor", "start"); ls.setAttribute("y", 19); }
-        tl.setAttribute("x", tt * cw + cw / 2); tl.textContent = "week " + tt;
+      mk("rect", { x: 0, y: 3, width: 10, height: 8, rx: 2, style: "fill: var(--stale)" }, svg);
+      mk("text", { x: 15, y: 11, style: TB, text: "outdated: learns from every past week" }, svg);
+      mk("rect", { x: 0, y: 17, width: 10, height: 8, rx: 2, style: "fill: var(--ref)" }, svg);
+      mk("text", { x: 15, y: 25, style: TB, text: "normal: learns from the last " + win + " weeks" }, svg);
+      for (var i = 0; i < n; i++) mk("rect", { x: i * cw + 0.5, y: 60, width: cw - 1, height: 14, rx: 1.5, style: "fill: var(--line)" }, svg);
+      [0, 4, 8, 12, 16, 20, 25].forEach(function (w) { mk("text", { x: w * cw + cw / 2, y: 88, "text-anchor": "middle", style: T, text: w }, svg); });
+      var sw = mk("rect", { x: 0, y: 34, height: 9, rx: 2, style: "fill: var(--stale)" }, svg);
+      var rw = mk("rect", { y: 46, height: 9, rx: 2, style: "fill: var(--ref)" }, svg);
+      var tw = mk("rect", { y: 57, width: cw, height: 20, rx: 2, style: "fill: none; stroke: var(--ink); stroke-width: 2" }, svg);
+      var tl = mk("text", { y: 106, "text-anchor": "middle", style: TB }, svg);
+      function at(t) { // t is fractional, so everything glides instead of stepping a week at a time
+        var x = t * cw;
+        sw.setAttribute("width", x.toFixed(2));
+        rw.setAttribute("x", (Math.max(0, t - win) * cw).toFixed(2)); rw.setAttribute("width", (Math.min(win, t) * cw).toFixed(2));
+        tw.setAttribute("x", x.toFixed(2));
+        tl.setAttribute("x", (x + cw / 2).toFixed(2)); tl.textContent = "learning for week " + Math.floor(t);
       }
-      return function (done) { tween(4200, function (p) { at(dev[0] + ease(p) * (dev[1] - dev[0])); }, done); };
+      at(dev[0]);
+      return function (done) { tween(5000, function (p) { at(dev[0] + p * (dev[1] + 1 - 1e-6 - dev[0])); }, done); };
     },
     frozen: function (svg) {
       var cfg = V.cfg, d0 = new Date(cfg.data.week0_start + "T00:00:00Z"), fz = new Date(cfg.degrade.stale.freeze_data_through + "T00:00:00Z");
@@ -492,6 +491,21 @@
       at(x0);
       onView(el, function () { tween(1600, function (p) { at(x0 + (x1 - x0) * easeOut(p)); }); }, "0px 0px -20% 0px");
     });
+  }
+
+  function initDeco() {
+    document.querySelectorAll(".deco").forEach(function (d) {
+      if (RM) return;
+      d.classList.add("wait");
+      onView(d, function () { setTimeout(function () { d.classList.remove("wait"); }, 300); });
+    });
+    var path = $("deco-path"), van = $("deco-van");
+    if (!path || !van) return;
+    var L = path.getTotalLength();
+    function at(f) { var pt = path.getPointAtLength(f * L); van.setAttribute("transform", "translate(" + (pt.x - 20).toFixed(1) + "," + (pt.y - 20).toFixed(1) + ")"); }
+    if (RM) { at(0.55); return; }
+    at(0);
+    onView(van.ownerSVGElement, function () { tween(3200, function (p) { at(0.92 * (1 - Math.pow(1 - p, 2))); }); });
   }
 
   // ------------------------------------------------------------ 2 sorting line (signature)
@@ -900,7 +914,7 @@
       if (id !== "top") { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
     });
   }
-  initTheme(); initNav(); initKeys(); initRoads();
+  initTheme(); initNav(); initKeys(); initRoads(); initDeco();
   // results.json (a copy of results/results.json) is the source of every result; summary.json only adds the build time
   Promise.all(["results", "timeline", "mechanism", "console", "manifest", "modlog", "text", "summary"].map(function (n) {
     return getJSON("data/" + n + ".json").catch(function (e) { if (n === "text" || n === "summary") return {}; throw e; });
