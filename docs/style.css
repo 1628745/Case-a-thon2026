@@ -486,8 +486,6 @@ section#built > .roles { margin-top: 22px; }
 /* Part 2 decoration: city map, van follows the streets */
 .rm-land { fill: color-mix(in srgb, var(--stale) 12%, var(--panel)); }
 .rm-water { fill: color-mix(in srgb, var(--ref) 38%, var(--panel)); }
-.rm-park { fill: color-mix(in srgb, var(--stale) 30%, var(--panel)); }
-.rm-tree { fill: var(--stale); }
 .rm-b1 { fill: color-mix(in srgb, var(--tote) 55%, var(--panel)); }
 .rm-b2 { fill: color-mix(in srgb, var(--lq) 40%, var(--panel)); }
 .rm-b3 { fill: color-mix(in srgb, var(--ref) 40%, var(--panel)); }
