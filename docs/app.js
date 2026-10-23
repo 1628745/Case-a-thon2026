@@ -4,7 +4,7 @@
   var D = {}, M = {}, V = {};
   var RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var CONDS = ["reference", "stale", "low_quality", "combined", "unseen"];
-  var CNAME = { reference: "reference", stale: "stale", low_quality: "low quality", combined: "combined", unseen: "early scanner (unseen)" };
+  var CNAME = { reference: "clean data", stale: "outdated data", low_quality: "sloppy scans", combined: "both at once", unseen: "surprise problem" };
   var CVAR = { reference: "var(--ref)", stale: "var(--stale)", low_quality: "var(--lq)", combined: "var(--comb)", unseen: "var(--unseen)" };
   var revealed = {};
 
@@ -71,8 +71,9 @@
   }
   function buildV() {
     var S = D.summary, cfg = S.config;
-    V = { final: blockView(S.final), dev: blockView(S.dev), cfg: cfg, console: D.console, headline: S.headline, x: {} };
+    V = { final: blockView(S.final), dev: blockView(S.dev), cfg: cfg, console: D.console, manifest: D.manifest, headline: S.headline, x: {} };
     var x = V.x, sev = cfg.degrade.low_quality.sloppy_share;
+    x.oneIn = "1 in " + Math.round(1 / sev);
     var st = track("stale", false), rf = track("reference", false), lq = track("low_quality", false);
     x.staleAgeEnd = last(st.mean_train_age_days);
     x.refAgeEnd = last(rf.mean_train_age_days);
@@ -327,8 +328,8 @@
       var rw = mk("rect", { y: 30, height: 10, rx: 2, style: "fill: var(--ref)" }, svg);
       var sw = mk("rect", { y: 10, height: 10, rx: 2, style: "fill: var(--stale)" }, svg);
       var tw = mk("rect", { y: 49, width: cw, height: 20, rx: 2, style: "fill: none; stroke: var(--ink); stroke-width: 2" }, svg);
-      var lr = mk("text", { y: 39, style: TB, text: "reference: last " + win + " weeks" }, svg);
-      var ls = mk("text", { y: 19, style: TB, text: "stale: every past week" }, svg);
+      var lr = mk("text", { y: 39, style: TB, text: "normal: last " + win + " weeks" }, svg);
+      var ls = mk("text", { y: 19, style: TB, text: "outdated: every past week" }, svg);
       var tl = mk("text", { y: 114, "text-anchor": "middle", style: TB }, svg);
       function at(t) {
         var tt = Math.round(t);
@@ -338,7 +339,7 @@
         lr.setAttribute("x", tt * cw + cw + 4); ls.setAttribute("x", tt * cw + cw + 4);
         if (tt > n - 9) { lr.setAttribute("x", Math.max(0, tt - win) * cw - 4); lr.setAttribute("text-anchor", "end"); ls.setAttribute("x", 2); ls.setAttribute("text-anchor", "start"); ls.setAttribute("y", 8); }
         else { lr.setAttribute("text-anchor", "start"); ls.setAttribute("y", 19); }
-        tl.setAttribute("x", tt * cw + cw / 2); tl.textContent = "test week " + tt;
+        tl.setAttribute("x", tt * cw + cw / 2); tl.textContent = "week " + tt;
       }
       return function (done) { tween(4200, function (p) { at(dev[0] + ease(p) * (dev[1] - dev[0])); }, done); };
     },
@@ -350,17 +351,17 @@
       months.forEach(function (m, i) { var d = Math.round((Date.UTC(2022, 4 + i, 1) - d0) / 864e5); mk("text", { x: d * dx, y: 88, style: T, text: m }, svg); });
       var ticks = mk("g", {}, svg);
       mk("line", { x1: fd * dx, x2: fd * dx, y1: 42, y2: 74, style: "stroke: var(--stale); stroke-width: 2" }, svg);
-      mk("text", { x: fd * dx + 4, y: 50, style: "font: 600 12px var(--body); fill: var(--stale)", text: "last refresh, " + cfg.degrade.stale.freeze_data_through }, svg);
+      mk("text", { x: fd * dx + 4, y: 50, style: "font: 600 12px var(--body); fill: var(--stale)", text: "last update, " + cfg.degrade.stale.freeze_data_through }, svg);
       var cur = mk("circle", { cy: 70, r: 5, style: "fill: var(--ink)" }, svg);
       var age = mk("text", { x: 0, y: 22, style: "font: 800 22px var(--display); fill: var(--ink)" }, svg);
-      mk("text", { x: 0, y: 112, style: T, text: "Each tick is a daily feature refresh." }, svg);
+      mk("text", { x: 0, y: 112, style: T, text: "Each tick is a daily update." }, svg);
       var drawn = 0;
       function at(day) {
         while (drawn <= Math.min(day, fd)) { mk("line", { x1: drawn * dx, x2: drawn * dx, y1: 62, y2: 70, style: "stroke: var(--ref); stroke-width: 1" }, ticks); drawn++; }
         cur.setAttribute("cx", day * dx);
         var a = day <= fd ? 1 : day - fd;
         var dt = new Date(d0.getTime() + day * 864e5);
-        age.textContent = months[dt.getUTCMonth() - 4] + " " + dt.getUTCDate() + ": features " + a + (a === 1 ? " day" : " days") + " old";
+        age.textContent = months[dt.getUTCMonth() - 4] + " " + dt.getUTCDate() + ": stats " + a + (a === 1 ? " day" : " days") + " old";
         age.style.fill = a > 7 ? "var(--stale)" : "var(--ink)";
       }
       return function (done) { ticks.innerHTML = ""; drawn = 0; tween(4500, function (p) { at(Math.round(p * (nDays - 1))); }, done); };
@@ -403,9 +404,9 @@
       };
     },
     combined: function (svg, holder) {
-      var R = V.dev.recovery, rows = [["stale", "stale"], ["low_quality", "low quality"], ["combined", "combined"]];
-      var W = 340, max = Math.max(R.stale.gap, R.low_quality.gap, R.combined.gap), L = 92, bw = W - L - 70;
-      mk("text", { x: 0, y: 12, style: T, text: "Extra MAE vs reference, min (dev weeks, Guard off)" }, svg);
+      var R = V.dev.recovery, rows = [["stale", CNAME.stale], ["low_quality", CNAME.low_quality], ["combined", CNAME.combined]];
+      var W = 340, max = Math.max(R.stale.gap, R.low_quality.gap, R.combined.gap), L = 104, bw = W - L - 70;
+      mk("text", { x: 0, y: 12, style: T, text: "Extra minutes of error per package, without the Guard" }, svg);
       var bars = rows.map(function (r, i) {
         var y = 26 + i * 30;
         mk("text", { x: L - 8, y: y + 14, "text-anchor": "end", style: TB, text: r[1] }, svg);
@@ -461,7 +462,7 @@
     var series = ["reference", "low_quality"].map(function (c) {
       return { name: CNAME[c], color: CVAR[c], x: cat, y: order.map(function (w) { var r = sl.filter(function (s) { return s.condition === c && s.window_weeks === w; })[0]; return r ? r.mae : null; }) };
     });
-    lineChart($("ch-shelf"), series, { cat: cat, yLabel: "mean MAE (min)", xLabel: "training window", yFmt: "f0", tipFmt: "f1", dots: true, endLabels: true, tipX: "window ", margin: { r: 90 } });
+    lineChart($("ch-shelf"), series, { cat: cat, yLabel: "average error (min per package)", xLabel: "weeks of history the model learns from", yFmt: "f0", tipFmt: "f1", dots: true, endLabels: true, tipX: "window ", margin: { r: 90 } });
   }
 
   // ------------------------------------------------------------ 2 sorting line (signature)
@@ -477,7 +478,7 @@
     belt("M" + MX1 + " " + Y2 + " L" + L3X + " " + Y2 + " L930 170");
     mk("path", { d: "M" + L3X + " " + Y2 + " L930 290", class: "sl-belt" }, svg);
     mk("path", { d: "M930 300 C 930 322, 900 322, 860 322 L" + L2X + " 322 L" + L2X + " " + (Y1 + 48), class: "sl-fb" }, svg);
-    mk("text", { x: 444, y: 314, class: "sl-note", text: "corrections and escalations go to the data steward and into reputation at the next retrain" }, svg);
+    mk("text", { x: 444, y: 314, class: "sl-note", text: "dispatcher decisions go to the data team and update who is trusted" }, svg);
     var layer = mk("g", {}, svg);
     function station(x, y, w, h, t, s, guard) {
       var g = mk("g", { class: "sl-st" + (guard ? " guard" : "") }, svg);
@@ -486,18 +487,18 @@
       if (s) mk("text", { x: x + w / 2, y: y + h / 2 + 15, "text-anchor": "middle", class: "s", text: s }, g);
       return g;
     }
-    station(14, Y1 - 32, 106, 64, "Delivery feed", "scans, ids, GPS");
-    station(14, Y2 - 32, 106, 64, "New package", "at acceptance");
-    station(L1X - 52, Y1 - 40, 104, 80, "L1", "ingest checks", true);
-    station(L2X - 52, Y1 - 40, 104, 80, "L2", "trust weights", true);
-    var model = station(MX0, Y1 - 40, MX1 - MX0, Y2 - Y1 + 80, "Weekly retrain", "median + P80 LightGBM");
-    station(L3X - 48, Y2 - 34, 96, 68, "L3", "promise check", true);
+    station(14, Y1 - 32, 106, 64, "Delivery data", "scans and uploads");
+    station(14, Y2 - 32, 106, 64, "New package", "at pickup");
+    station(L1X - 64, Y1 - 40, 128, 80, "1  Door check", "flag suspicious", true);
+    station(L2X - 64, Y1 - 40, 128, 80, "2  Trust", "weigh sources", true);
+    var model = station(MX0, Y1 - 40, MX1 - MX0, Y2 - Y1 + 80, "Weekly relearning", "the prediction model");
+    station(L3X - 62, Y2 - 34, 124, 68, "3  Final check", "before promising", true);
     station(930, 140, 66, 56, "Promise", "sent");
-    station(930, 262, 66, 56, "Person", "dispatcher");
-    mk("text", { x: 130, y: Y1 - 52, class: "sl-lane", text: "Every week: training records" }, svg);
-    mk("text", { x: 130, y: Y2 - 50, class: "sl-lane", text: "Every package: a prediction" }, svg);
-    mk("text", { x: L1X, y: Y1 + 62, "text-anchor": "middle", class: "sl-note", text: "flagged: weight × " + qw }, svg);
-    mk("text", { x: L2X, y: Y1 + 62, "text-anchor": "middle", class: "sl-note", text: "recency × reputation" }, svg);
+    station(930, 262, 66, 56, "Person", "decides");
+    mk("text", { x: 130, y: Y1 - 52, class: "sl-lane", text: "Every week: the model relearns from recent records" }, svg);
+    mk("text", { x: 130, y: Y2 - 50, class: "sl-lane", text: "Every package: a promise to the customer" }, svg);
+    mk("text", { x: L1X, y: Y1 + 62, "text-anchor": "middle", class: "sl-note", text: "suspicious ones count " + fmt(qw, "pct0") }, svg);
+    mk("text", { x: L2X, y: Y1 + 62, "text-anchor": "middle", class: "sl-note", text: "recent, trusted ones count more" }, svg);
     var toks = [], acc1 = 0, acc2 = 0, spawn1 = 0, spawn2 = 0, last = null, running = false, paused = false, inView = false, pulse = 0;
     var modelRect = model.querySelector("rect");
     function addTok(lane) {
@@ -576,10 +577,10 @@
     var wref = C.width_med[ty] !== undefined ? C.width_med[ty] : C.width_glob;
     var dh = g.l3.defer_hist_age_days, nullingOn = maxAge !== null && (dh === null || maxAge <= dh);
     var rules = [
-      { id: "age", name: "History-feature age", val: sc.meta.hist_age_days + (sc.meta.hist_age_days === 1 ? " day" : " days"), lim: dh === null ? "never (alert instead)" : "> " + dh + " days", fired: dh !== null && sc.meta.hist_age_days > dh && !nullingOn },
-      { id: "gps", name: "GPS fix age", val: fmt(sc.meta.gps_age_min, "f1") + " min", lim: "> " + g.l3.defer_gps_age_min + " min", fired: sc.meta.gps_age_min > g.l3.defer_gps_age_min },
-      { id: "area", name: "Area records in training window", val: fmt(sc.meta.area_rows, "int"), lim: "< " + g.l3.defer_min_area_rows, fired: sc.meta.area_rows < g.l3.defer_min_area_rows },
-      { id: "width", name: "Interval width (P80 − median)", val: fmt(width, "f0") + " min", lim: "> " + g.l3.defer_width_k + " × " + fmt(wref, "f0") + " min", fired: width > g.l3.defer_width_k * wref }
+      { id: "age", name: "Age of courier and area stats", val: sc.meta.hist_age_days + (sc.meta.hist_age_days === 1 ? " day" : " days"), lim: dh === null ? "never (alerts the data team instead)" : "> " + dh + " days", fired: dh !== null && sc.meta.hist_age_days > dh && !nullingOn },
+      { id: "gps", name: "GPS signal age", val: fmt(sc.meta.gps_age_min, "f1") + " min", lim: "> " + g.l3.defer_gps_age_min + " min", fired: sc.meta.gps_age_min > g.l3.defer_gps_age_min },
+      { id: "area", name: "Recent deliveries in this area", val: fmt(sc.meta.area_rows, "int"), lim: "< " + g.l3.defer_min_area_rows, fired: sc.meta.area_rows < g.l3.defer_min_area_rows },
+      { id: "width", name: "How unsure the model is (promise minus likely time)", val: fmt(width, "f0") + " min", lim: "> " + g.l3.defer_width_k + " × " + fmt(wref, "f0") + " min", fired: width > g.l3.defer_width_k * wref }
     ];
     return { p50: p50, p80: p80, width: width, wref: wref, rules: rules, ms: t.ms, nulled: nulled, defer: rules.some(function (r) { return r.fired; }) };
   }
@@ -591,64 +592,67 @@
   function renderSlip() {
     var sc = D.console.scenarios.filter(function (s) { return s.id === "sloppy"; })[0] || D.console.scenarios[0];
     var a = guardOff(sc), b = guardOn(sc), md = sc.inputs_off.minute_of_day;
-    $("slip-pkg").textContent = "Accepted " + clock(md, 0) + ". Courier reputation " + fmt(sc.meta.reputation, "f2") + ": recent scans are bulk end-of-shift scans and re-uploads.";
-    $("slip-off").innerHTML = esc(hm(a.p80)) + "<small>deliver by " + esc(clock(md, a.p80)) + "</small>";
-    $("slip-on").innerHTML = esc(hm(b.p80)) + "<small>deliver by " + esc(clock(md, b.p80)) + "</small>";
+    $("slip-pkg").textContent = "Picked up at " + clock(md, 0) + ". The courier's trust score is " + fmt(sc.meta.reputation, "f2") + " out of 1.";
+    $("slip-off").innerHTML = esc(hm(a.p80)) + "<small>arrives by " + esc(clock(md, a.p80)) + "</small>";
+    $("slip-on").innerHTML = esc(hm(b.p80)) + "<small>arrives by " + esc(clock(md, b.p80)) + "</small>";
+    $("slip-diff").textContent = hm(a.p80 - b.p80);
   }
+
   var caseOpened = 0, actions = [], curModelMs = null;
   function scenario() { return D.console.scenarios[+$("sc-pick").value || 0]; }
   function initWalk() {
     var C = D.console, pick = $("sc-pick");
-    fill(pick, C.scenarios.map(function (s, i) { return [i, s.name]; }));
+    var NAMES = { normal: "A normal package", stale: "Stats out of date", sloppy: "A sloppy courier", rare: "A brand-new area", golden: "Golden Week rush" };
+    fill(pick, C.scenarios.map(function (s, i) { return [i, s.id === "stale" ? "Stats " + s.meta.hist_age_days + " days out of date" : NAMES[s.id] || s.name]; }));
     var first = 0;
     for (var i = 0; i < C.scenarios.length; i++) if (guardOn(C.scenarios[i]).defer) { first = i; break; }
     pick.value = first;
     pick.addEventListener("change", renderWalk);
     function act(kind) {
       var sc = scenario(), b = guardOn(sc), secs = (performance.now() - caseOpened) / 1000;
-      var rec = { kind: kind, sc: sc.name, model: Math.round(b.p80), secs: secs, note: $("act-note").value.trim(), state: b.defer ? "deferred" : "auto-approved" };
-      if (kind === "Corrected") rec.to = +$("act-min").value;
+      var rec = { kind: kind, sc: sc.name, model: Math.round(b.p80), secs: secs, note: $("act-note").value.trim(), state: b.defer ? "flagged by the Guard" : "sent automatically" };
+      if (kind === "Changed") rec.to = +$("act-min").value;
       actions.unshift(rec);
       $("ef-human").textContent = secs.toFixed(1) + " s";
       $("act-log").innerHTML = actions.map(function (r) {
-        return "<div><b>" + esc(r.kind) + "</b>: " + esc(r.sc) + " (" + r.state + "), model promise " + r.model + " min" +
-          (r.to !== undefined ? ", corrected to " + r.to + " min" : "") + (r.kind === "Escalated" ? ", sent to the data steward's queue" : "") +
-          (r.note ? ". Note: " + esc(r.note) : "") + ". Review time " + r.secs.toFixed(1) + " s.</div>";
+        return "<div><b>" + esc(r.kind) + "</b>: " + esc(r.sc) + " (" + r.state + "), system promise " + r.model + " min" +
+          (r.to !== undefined ? ", changed to " + r.to + " min" : "") +
+          (r.note ? ". Note: " + esc(r.note) : "") + ". Your time " + r.secs.toFixed(1) + " s.</div>";
       }).join("");
       $("act-note").value = "";
       caseOpened = performance.now();
     }
     $("act-approve").addEventListener("click", function () { act("Approved"); });
-    $("act-correct").addEventListener("click", function () { act("Corrected"); });
-    $("act-escalate").addEventListener("click", function () { act("Escalated"); });
+    $("act-correct").addEventListener("click", function () { act("Changed"); });
+    $("act-escalate").addEventListener("click", function () { act("Sent to the data team"); });
     renderWalk();
   }
   function renderWalk() {
     var sc = scenario(), C = D.console, g = C.guard, a = guardOff(sc), b = guardOn(sc), md = sc.inputs_off.minute_of_day;
     caseOpened = performance.now();
-    $("sc-desc").textContent = sc.description + " Inputs are medians over " + fmt(sc.n_packages, "int") + " packages.";
+    $("sc-desc").textContent = sc.description + " Built from the typical values of " + fmt(sc.n_packages, "int") + " packages.";
     function side(title, r, sub) {
-      return "<h5>" + title + "</h5><div class='p'>" + esc(hm(r.p80)) + "</div><div class='s'>promise: deliver by " + esc(clock(md, r.p80)) +
-        "</div><div class='s'>expected (median) " + esc(hm(r.p50)) + "</div><div class='s'>" + sub + "</div>";
+      return "<h5>" + title + "</h5><div class='p'>" + esc(hm(r.p80)) + "</div><div class='s'>promise: arrives by " + esc(clock(md, r.p80)) +
+        "</div><div class='s'>most likely: " + esc(hm(r.p50)) + "</div><div class='s'>" + sub + "</div>";
     }
-    $("w-off").innerHTML = side("Guard off", a, "no checks run, sent automatically");
-    $("w-on").innerHTML = side("Guard on", b, "calibrated P80, after the checks below");
+    $("w-off").innerHTML = side("Without the Guard", a, "no checks, sent to the customer automatically");
+    $("w-on").innerHTML = side("With the Guard", b, "after the checks below");
     var reasons = b.rules.filter(function (r) { return r.fired; });
     $("w-decision").innerHTML = b.defer
-      ? "<div class='verdict defer'>Deferred to the dispatcher: " + esc(reasons.map(function (r) { return r.name.toLowerCase() + " " + r.val + " (rule: " + r.lim + ")"; }).join("; ")) + ".</div>"
-      : "<div class='verdict ok'>All serve-time checks pass, so the Guard sends this promise automatically.</div>";
-    $("w-rules").innerHTML = "<tr><th class='l'>Check</th><th>Value</th><th class='l'>Defers when</th><th class='l'>Result</th></tr>" +
+      ? "<div class='verdict defer'>The Guard won't promise this on its own. A dispatcher decides. Reason: " + esc(reasons.map(function (r) { return r.name.toLowerCase() + " is " + r.val + " (limit: " + r.lim + ")"; }).join("; ")) + ".</div>"
+      : "<div class='verdict ok'>Every check passes, so the promise goes to the customer automatically.</div>";
+    $("w-rules").innerHTML = "<tr><th class='l'>Check</th><th>This package</th><th class='l'>Hand to a person when</th><th class='l'>Result</th></tr>" +
       b.rules.map(function (r) {
-        return "<tr><td class='l'>" + esc(r.name) + "</td><td>" + esc(r.val) + "</td><td class='l'>" + esc(r.lim) + "</td><td class='l " + (r.fired ? "fail'>defer" : "pass'>pass") + "</td></tr>";
+        return "<tr><td class='l'>" + esc(r.name) + "</td><td>" + esc(r.val) + "</td><td class='l'>" + esc(r.lim) + "</td><td class='l " + (r.fired ? "fail'>hand to a person" : "pass'>pass") + "</td></tr>";
       }).join("") +
-      "<tr><td class='l'>Courier reputation (L2)</td><td>" + fmt(sc.meta.reputation, "f2") + "</td><td class='l'>weights training, never defers</td><td class='l " + (sc.meta.reputation < 0.5 ? "fail'>down-weighted" : "pass'>full weight") + "</td></tr>";
-    var age = sc.meta.hist_age_days, rep = sc.meta.reputation, ci = C.features.indexOf("courier_hist_mean");
+      "<tr><td class='l'>Courier trust score</td><td>" + fmt(sc.meta.reputation, "f2") + "</td><td class='l'>never: it changes how much their records count</td><td class='l " + (sc.meta.reputation < 0.5 ? "fail'>counts less" : "pass'>full trust") + "</td></tr>";
+    var age = sc.meta.hist_age_days, rep = sc.meta.reputation;
     var gauges = [
-      { k: "History-feature age", v: age + (age === 1 ? " day" : " days"), p: Math.min(1, age / 60), bad: age > 7, n: age > 7 ? "Older than 7 days: kept, and the data steward gets a feature-store alert." : "Refreshed daily." },
-      { k: "Courier reputation", v: fmt(rep, "f2") + " of 1", p: rep, bad: rep < 0.5, n: rep < 0.5 ? "Their records disagree with peers in the same area and hour, and many were flagged." : "In line with peers." },
-      { k: "Courier history, raw vs guarded", v: fmt(sc.inputs_off.courier_hist_mean, "f0") + " → " + fmt(sc.inputs_on.courier_hist_mean, "f0") + " min", p: Math.min(1, sc.inputs_on.courier_hist_mean / Math.max(1, sc.inputs_off.courier_hist_mean)), bad: rep < 0.5, n: "Mean recorded duration, last 14 days. Guarded = quarantined records removed." },
-      { k: "Area support", v: fmt(sc.meta.area_rows, "int") + " records", p: Math.min(1, sc.meta.area_rows / 60), bad: sc.meta.area_rows < g.l3.defer_min_area_rows, n: "Training records from this area in the last " + V.cfg.splits.window_weeks + " weeks." },
-      { k: "GPS fix age", v: fmt(sc.meta.gps_age_min, "f1") + " min", p: 1, bad: false, n: "Always 0 in LaDe, so this check can't fire on this data." }
+      { k: "Age of courier and area stats", v: age + (age === 1 ? " day" : " days"), p: Math.min(1, age / 60), bad: age > 7, n: age > 7 ? "Over a week old: still used, and the data team gets an alert." : "Updated daily." },
+      { k: "Courier trust score", v: fmt(rep, "f2") + " out of 1", p: rep, bad: rep < 0.5, n: rep < 0.5 ? "Their records disagree with other couriers in the same area and hour, and many were flagged." : "In line with other couriers." },
+      { k: "Courier's average delivery time", v: fmt(sc.inputs_off.courier_hist_mean, "f0") + " → " + fmt(sc.inputs_on.courier_hist_mean, "f0") + " min", p: Math.min(1, sc.inputs_on.courier_hist_mean / Math.max(1, sc.inputs_off.courier_hist_mean)), bad: rep < 0.5, n: "Last 14 days, as recorded → after the Guard set suspicious records aside." },
+      { k: "Recent deliveries in this area", v: fmt(sc.meta.area_rows, "int"), p: Math.min(1, sc.meta.area_rows / 60), bad: sc.meta.area_rows < g.l3.defer_min_area_rows, n: "In the last " + V.cfg.splits.window_weeks + " weeks of data the model learned from." },
+      { k: "GPS signal age", v: fmt(sc.meta.gps_age_min, "f1") + " min", p: 1, bad: false, n: "Always fresh in this dataset, so this check never fires here." }
     ];
     $("w-quality").innerHTML = gauges.map(function (q) {
       return "<div class='gauge" + (q.bad ? " bad" : "") + "'><span class='k'>" + esc(q.k) + "</span><span class='v'>" + esc(q.v) + "</span><div class='bar'><i style='width:" + (100 * Math.max(0.03, q.p)).toFixed(0) + "%'></i></div><span class='g-note'>" + esc(q.n) + "</span></div>";
@@ -657,14 +661,14 @@
     var raw = Object.assign({}, sc.inputs_on, { courier_hist_mean: sc.inputs_off.courier_hist_mean, area_hist_mean: sc.inputs_off.area_hist_mean, open_workload: sc.inputs_off.open_workload });
     var wi = guardOn(sc, raw);
     reasons.forEach(function (r) {
-      if (r.id === "area") ex.push("This area has no records in the last " + V.cfg.splits.window_weeks + " weeks of training data, so the model would be guessing from other areas. The Guard asks a person instead of promising.");
-      if (r.id === "width") ex.push("The model is unsure: the gap between its median and its promise is " + fmt(b.width, "f0") + " min, more than " + g.l3.defer_width_k + "× the usual " + fmt(b.wref, "f0") + " min for this area type.");
-      if (r.id === "gps") ex.push("The courier's GPS fix is " + fmt(sc.meta.gps_age_min, "f1") + " min old, so the distance input can't be trusted.");
+      if (r.id === "area") ex.push("There have been no deliveries in this area in the last " + V.cfg.splits.window_weeks + " weeks, so the model would be guessing from other areas. Rather than make up a promise, the Guard asks a person.");
+      if (r.id === "width") ex.push("The model is unusually unsure: its promise is " + fmt(b.width, "f0") + " min beyond its most likely time, more than " + g.l3.defer_width_k + " times the usual " + fmt(b.wref, "f0") + " min for this kind of area.");
+      if (r.id === "gps") ex.push("The courier's GPS position is " + fmt(sc.meta.gps_age_min, "f1") + " min old, so the distance can't be trusted.");
     });
-    if (rep < 0.5) ex.push("This courier's records look like bulk scans and re-uploads, so the Guard down-weights them in training and leaves them out of the history it serves.");
-    if (Math.abs(wi.p80 - b.p80) >= 5) ex.push("What-if, computed live: feeding the Guard's own model the raw history (" + fmt(sc.inputs_off.courier_hist_mean, "f0") + " min for this courier) instead of the guarded history moves its promise from " + hm(b.p80) + " to " + hm(wi.p80) + "." + (rep < 0.5 ? " Most of the Guard-off promise comes from the inflated history, not from the package." : ""));
-    if (age > 7) ex.push("The history features are " + age + " days old. In our tests stale history stayed informative, so the Guard keeps it and alerts the data steward instead of deferring every package.");
-    if (!ex.length) ex.push("Nothing unusual: fresh history, a known area, a reliable courier and a normal interval. The Guard-on promise differs from Guard off only through calibration and trust weights.");
+    if (rep < 0.5) ex.push("This courier's records look like end-of-shift bulk scans and duplicates. The Guard counts them for less when the model relearns, and leaves them out of the averages it reads.");
+    if (Math.abs(wi.p80 - b.p80) >= 5) ex.push("Live what-if: give the Guard's model the courier's average as recorded (" + fmt(sc.inputs_off.courier_hist_mean, "f0") + " min) instead of the cleaned one, and its promise moves from " + hm(b.p80) + " to " + hm(wi.p80) + "." + (rep < 0.5 ? " Most of the inflated promise comes from the bad records, not from the package." : ""));
+    if (age > 7) ex.push("The stats are " + age + " days old. In our tests old stats were still useful, so the Guard keeps them and alerts the data team instead of holding up every package.");
+    if (!ex.length) ex.push("Nothing unusual: fresh stats, a known area, a trusted courier and a normal level of certainty. The two promises differ only because the Guard's model learned from cleaner, better-weighted data.");
     $("w-explain").innerHTML = ex.map(function (t) { return "<p>" + esc(t) + "</p>"; }).join("");
     if (document.activeElement !== $("act-min")) $("act-min").value = Math.round(b.p80);
     curModelMs = b.ms;
@@ -672,14 +676,15 @@
     $("ef-human").textContent = "starts now";
     renderScale();
   }
+
   function renderScale() {
     var on = V.final.cells.combined.on, tl = track("reference", false), h0 = V.cfg.splits.heldout[0];
     var wk = tl.week.map(function (w, i) { return [w, tl.n_test[i]]; }).filter(function (p) { return p[0] >= h0; });
     var perDay = wk.reduce(function (s, p) { return s + p[1]; }, 0) / wk.length / 7, rs = D.console.review_seconds;
     var defDay = on.defer * perDay, hrs = defDay * rs / 3600;
-    $("ef-scale").innerHTML = "<p>At city scale in held-out weeks: about " + fmt(perDay, "int") + " packages a day; with the combined feed the Guard defers " + fmt(on.defer, "pct1") +
-      ", about " + fmt(defDay, "int") + " a day. At " + rs + " s each that is " + fmt(hrs, "f1") + " person-hours of review a day, against " + (curModelMs === null ? "–" : curModelMs.toFixed(2)) +
-      " ms of model time per package and " + fmt(on.secs, "f0") + " s per weekly retrain. A one-district pilot carries a fraction of that load.</p>";
+    $("ef-scale").innerHTML = "<p><b>At city scale:</b> about " + fmt(perDay, "int") + " packages a day in the test weeks. With both data problems present, the Guard hands " + fmt(on.defer, "pct1") +
+      " of them, about " + fmt(defDay, "int") + " a day, to a person. At " + rs + " seconds each, that's " + fmt(hrs, "f1") + " hours of review a day. The computer needs " + (curModelMs === null ? "–" : curModelMs.toFixed(2)) +
+      " ms per package and " + fmt(on.secs, "f0") + " seconds for each weekly update. A one-district pilot would carry a fraction of that.</p>";
   }
 
   // ------------------------------------------------------------ 3 matrix
@@ -689,19 +694,20 @@
     var conds = ["reference", "stale", "low_quality", "combined"].concat(B.cells.unseen ? ["unseen"] : []);
     function cellHtml(x) {
       var gap = x.mae - ref;
-      return "<span class='m'>" + fmt(x.mae, "f1") + "</span> <span class='sp'>± " + fmt(x.mae_spread, "f1") + "</span><span class='gap'>" + (Math.abs(gap) < 0.005 ? "reference" : fmt(gap, "sgn1") + " min vs reference") + "</span>";
+      return "<span class='m'>" + fmt(x.mae, "f1") + "</span> <span class='sp'>± " + fmt(x.mae_spread, "f1") + "</span><span class='gap'>" + (Math.abs(gap) < 0.005 ? "the baseline" : fmt(gap, "sgn1") + " min vs clean") + "</span>";
     }
-    $("mx-table").innerHTML = "<caption class='sr'>MAE by condition and Guard, " + (mxBlock === "final" ? "held-out weeks" : "development weeks") + "</caption>" +
-      "<tr><th class='l'>Condition</th><th>Guard off<br>MAE (min)</th><th>Guard on<br>MAE (min)</th><th>Gap recovered</th><th>Miss rate<br>off → on</th><th>Promise width (min)<br>off → on</th><th>Deferred<br>(on)</th></tr>" +
+    $("mx-table").innerHTML = "<caption class='sr'>Average error by problem, with and without the Guard</caption>" +
+      "<tr><th class='l'>Problem</th><th>Without the Guard<br>avg error (min)</th><th>With the Guard<br>avg error (min)</th><th>Extra error<br>removed</th><th>On-time promises<br>without → with</th><th>Handed to<br>a person</th></tr>" +
       conds.map(function (c) {
         var o = B.cells[c].off, n = B.cells[c].on, r = B.recovery[c];
         var rec = c === "reference" ? "<span class='sp'>cost " + fmt(n.mae / o.mae - 1, "spct2") + "</span>" : "<span class='rec'>" + fmt(r && r.recovery, "pct0") + "</span>";
         return "<tr" + (c === "unseen" ? " class='extra'" : "") + "><td class='l'><span class='cname' style='--c:" + CVAR[c] + "'><i></i>" + esc(CNAME[c]) + "</span>" +
-          (c === "unseen" ? "<span class='gap'>held-out stress test, outside the 8 cells</span>" : "") + "</td><td>" + cellHtml(o) + "</td><td>" + cellHtml(n) + "</td><td>" + rec +
-          "</td><td>" + fmt(o.miss, "pct1") + " → " + fmt(n.miss, "pct1") + "</td><td>" + fmt(o.width, "f0") + " → " + fmt(n.width, "f0") + "</td><td>" + fmt(n.defer, "pct1") + "</td></tr>";
+          (c === "unseen" ? "<span class='gap'>early scans, never seen while designing</span>" : "") + "</td><td>" + cellHtml(o) + "</td><td>" + cellHtml(n) + "</td><td>" + rec +
+          "</td><td>" + fmt(1 - o.miss, "pct0") + " → " + fmt(1 - n.miss, "pct0") + "</td><td>" + fmt(n.defer, "pct1") + "</td></tr>";
       }).join("");
     renderDumbbell(B, conds, ref);
   }
+
   function renderDumbbell(B, conds, ref) {
     var el = $("ch-dumbbell"), c = base(el, { margin: { l: 170, r: 30, t: 24, b: 42 }, aria: "MAE with and without the Guard by condition" });
     var vals = []; conds.forEach(function (k) { vals.push(B.cells[k].off.mae, B.cells[k].on.mae); });
@@ -711,8 +717,8 @@
     c.g.append("g").attr("class", "axis").attr("transform", "translate(0," + c.h + ")").call(d3.axisBottom(X).ticks(6));
     c.g.append("g").attr("class", "axis").call(d3.axisLeft(Y).tickSize(0).tickFormat(function (k) { return CNAME[k]; })).select(".domain").remove();
     c.g.append("line").attr("x1", X(ref)).attr("x2", X(ref)).attr("y1", -8).attr("y2", c.h).style("stroke", "var(--ref)").attr("stroke-width", 2);
-    c.g.append("text").attr("class", "direct").attr("x", X(ref)).attr("y", -12).attr("text-anchor", "middle").style("fill", "var(--ref)").text("reference " + fmt(ref, "f1"));
-    xLabel(c, "MAE (min)");
+    c.g.append("text").attr("class", "direct").attr("x", X(ref)).attr("y", -12).attr("text-anchor", "middle").style("fill", "var(--ref)").text("clean data: " + fmt(ref, "f1") + " min");
+    xLabel(c, "average error per package (min)");
     conds.forEach(function (k) {
       var o = B.cells[k].off.mae, n = B.cells[k].on.mae, y = Y(k), col = CVAR[k];
       var ln = c.g.append("line").attr("x1", X(o)).attr("x2", X(o)).attr("y1", y).attr("y2", y).style("stroke", col).attr("stroke-width", 3);
@@ -728,9 +734,9 @@
 
   // ------------------------------------------------------------ 3 weekly
   var wkGuard = "both";
-  var METRICS = [["gap", "MAE gap vs reference (min)", "sgn1"], ["mae_min", "MAE (min)", "f0"], ["mae_trim_min", "MAE, packages ≤ 24 h (min)", "f0"],
-    ["p90_err_min", "90th-percentile error (min)", "f0"], ["miss_rate", "Promise-miss rate", "pct0"], ["promise_width_min", "Promise width (min)", "f0"],
-    ["defer_rate", "Deferral rate", "pct0"], ["rare_mae_min", "Rare-area MAE (min)", "f0"]];
+  var METRICS = [["gap", "Extra error vs clean data (min per package)", "sgn1"], ["mae_min", "Average error (min per package)", "f0"], ["mae_trim_min", "Average error, packages delivered within a day (min)", "f0"],
+    ["p90_err_min", "Error on the hardest 10% of packages (min)", "f0"], ["miss_rate", "Late promises (share of packages)", "pct0"], ["promise_width_min", "Average promise (min)", "f0"],
+    ["defer_rate", "Handed to a person (share of packages)", "pct0"], ["rare_mae_min", "Average error in rare areas (min)", "f0"]];
   function initWeekly() {
     fill($("wk-metric"), METRICS.map(function (m) { return [m[0], m[1]]; }), "gap");
     $("wk-conds").insertAdjacentHTML("beforeend", CONDS.map(function (c) {
@@ -758,17 +764,18 @@
           var j = refOff.week.indexOf(w); return j < 0 ? null : arr[i] - refOff.mae_min.mean[j];
         });
       };
-      series.push({ name: CNAME[c.condition] + (c.guard ? ", Guard on" : ", Guard off"), color: CVAR[c.condition], dash: c.guard, x: c.week, y: sub(src.mean), lo: sub(src.lo), hi: sub(src.hi) });
+      series.push({ name: CNAME[c.condition] + (c.guard ? ", with Guard" : ", without"), color: CVAR[c.condition], dash: c.guard, x: c.week, y: sub(src.mean), lo: sub(src.lo), hi: sub(src.hi) });
     });
     var h0 = V.cfg.splits.heldout[0], h1 = V.cfg.splits.heldout[1];
     lineChart($("ch-weekly"), series, {
       xDomain: [V.cfg.splits.dev[0], h1], shade: [h0 - 0.5, h1 + 0.5], zero: key === "gap", hband: key === "miss_rate" ? [D.timeline.monitor.miss_low, D.timeline.monitor.miss_high] : null,
-      yLabel: meta[1], xLabel: "test week (week 0 starts " + V.cfg.data.week0_start + ")", yFmt: meta[2], tipFmt: meta[2] === "f0" ? "f1" : meta[2] === "pct0" ? "pct1" : meta[2],
+      yLabel: meta[1], xLabel: "week (week 0 starts " + V.cfg.data.week0_start + ")", yFmt: meta[2], tipFmt: meta[2] === "f0" ? "f1" : meta[2] === "pct0" ? "pct1" : meta[2],
       markers: D.timeline.markers.map(function (m) { return { x: m.week - 0.5, label: m.label }; }), aria: meta[1] + " by test week"
     });
     legend($("lg-weekly"), series.map(function (s) { return { name: s.name, color: s.color, dash: s.dash }; }).concat(key === "miss_rate" ? [] : []));
-    var ev = D.timeline.markers.map(function (m) { return "week " + m.week + ": " + m.label; }).join("; ");
-    $("lg-weekly").insertAdjacentHTML("beforeend", "<span class='note'>Dotted lines: " + esc(ev) + "." + (key === "miss_rate" ? " Green band: the monitor's normal range." : "") + "</span>");
+    var PLAIN = { 4: "sloppy scanning begins", 8: "stats stop updating", 10: "duplicate uploads begin", 18: "early scans begin (surprise test)", 22: "final test weeks begin, including Golden Week" };
+    var ev = D.timeline.markers.map(function (m) { return "week " + m.week + ": " + (PLAIN[m.week] || m.label); }).join("; ");
+    $("lg-weekly").insertAdjacentHTML("beforeend", "<span class='note'>Dotted lines: " + esc(ev) + "." + (key === "miss_rate" ? " Green band: the normal range our weekly monitor expects." : "") + "</span>");
   }
   function renderTracks() {
     var c = $("wk-track").value, col = CVAR[c];
@@ -799,7 +806,7 @@
     }
     var stale = c === "stale";
     two("cn-data", stale ? "feature_age_days" : "injected_share_train", stale ? "f0" : "pct0");
-    $("cn-data-c").textContent = stale ? "Data: history-feature age, days" : "Data: injected share of training weight";
+    $("cn-data-c").textContent = stale ? "Data: age of courier/area stats, days" : "Data: bad records, share of what the model learns from";
     two("cn-label", "train_label_ks_vs_ref", "f2");
     two("cn-model", "probe_shift_p80", "f0");
     function gap(s) { return s.week.map(function (w, i) { var j = ref.week.indexOf(w); return j < 0 ? null : s.mae_min[i] - ref.mae_min[j]; }); }
@@ -814,22 +821,19 @@
     var lqOff = S.shelf_life.filter(function (r) { return r.condition === "low_quality" && r.window_weeks === String(V.cfg.splits.window_weeks); })[0].mae;
     var bc = V.dev.scorecard.filter(function (r) { return r.criterion === "Beats control"; })[0];
     var rows = [
-      { k: "No fix", v: lqOff - ref, color: "var(--lq)" },
-      { k: "Random removal, same count", v: ctl.random.mae - ref, color: "var(--muted)" },
-      { k: "Oracle: drop injected rows", v: ctl.oracle.mae - ref, color: "var(--ref)" },
-      { k: "Guard", v: bc.value.guard - ref, color: "var(--tote)" }
+      { k: "Do nothing", v: lqOff - ref, color: "var(--lq)" },
+      { k: "Delete records at random", v: ctl.random.mae - ref, color: "var(--muted)" },
+      { k: "Delete exactly the bad ones", v: ctl.oracle.mae - ref, color: "var(--ref)" },
+      { k: "The Guard", v: bc.value.guard - ref, color: "var(--tote)" }
     ];
     rows.forEach(function (r) { r.label = fmt(r.v, "sgn1") + " min"; });
-    hbars($("ch-ctrl"), rows, { xLabel: "MAE minus reference (min)", aria: "Low quality condition: extra MAE under each fix" });
-    $("ch-ctrl-c").textContent = (D.text.mechanism || {}).controls || "";
+    hbars($("ch-ctrl"), rows, { left: 180, xLabel: "extra minutes of error per package", aria: "Extra error from sloppy scans under each fix" });
     var dose = S.dose, sv = [];
     [false, true].forEach(function (g) {
       var a = dose.filter(function (d) { return d.guard === g; }).sort(function (p, q) { return p.severity - q.severity; });
-      sv.push({ name: g ? "Guard on" : "Guard off", color: g ? "var(--tote-ink)" : "var(--lq)", dash: g, x: a.map(function (d) { return d.severity; }), y: a.map(function (d) { return d.mae; }) });
+      sv.push({ name: g ? "with the Guard" : "without", color: g ? "var(--tote-ink)" : "var(--lq)", dash: g, x: a.map(function (d) { return d.severity; }), y: a.map(function (d) { return d.mae; }) });
     });
-    lineChart($("ch-dose"), sv, { yLabel: "mean MAE (min)", xLabel: "share of couriers bulk-scanning", xFmt: "pct0", yFmt: "f0", tipFmt: "f1", dots: true, endLabels: true, tipX: "share ", margin: { r: 80 } });
-    // tooltip x labels for dose are fractions; acceptable as "share 0.35"
-    $("ch-dose-c").textContent = (D.text.mechanism || {}).dose || "";
+    lineChart($("ch-dose"), sv, { yLabel: "average error (min per package)", xLabel: "share of couriers scanning sloppily", xFmt: "pct0", yFmt: "f0", tipFmt: "f1", dots: true, endLabels: true, tipX: "", margin: { r: 110 } });
   }
 
   // ------------------------------------------------------------ 3 classifier
@@ -844,23 +848,28 @@
     fill(sel, keys.map(function (k) { return [k, CNAME[k]]; }), keys.indexOf(prev) >= 0 ? prev : "low_quality");
     var k = sel.value, d = B.detector[k];
     var span = clBlock === "final" ? V.cfg.splits.heldout : V.cfg.splits.dev, nW = span[1] - span[0] + 1, nS = V.cfg.seeds.length;
-    $("cl-unit").textContent = "One check of one training record in one weekly retrain. A record is checked again in every window it falls in (up to " + V.cfg.splits.window_weeks +
-      " times; stale and combined train on all past weeks, so more), and counts are summed over " + nW * nS + " retrains (" + nW + " weeks × " + nS + " seeds).";
+    $("cl-unit").textContent = "One check of one training record in one weekly update. A record is checked again in every window it falls in (up to " + V.cfg.splits.window_weeks +
+      " times; outdated and combined runs train on all past weeks, so more), and counts are summed over " + nW * nS + " updates (" + nW + " weeks × " + nS + " seeds).";
     var pos = d.tp + d.fn, neg = d.fp + d.tn;
     function cl(v, of, label, cc) {
       var share = of ? v / of : 0;
-      return "<div class='c' style='--cc:" + cc + "'><div class='fill' style='height:" + (100 * share).toFixed(1) + "%'></div><b>" + fmt(v, "int") + "</b><span>" + label + (of ? ", " + fmt(share, share < 0.01 ? "pct2" : "pct1") + " of column" : "") + "</span></div>";
+      return "<div class='c' style='--cc:" + cc + "'><div class='fill' style='height:" + (100 * share).toFixed(1) + "%'></div><b>" + fmt(v, "int") + "</b><span>" + label + "</span></div>";
     }
-    $("cl-matrix").innerHTML = "<div></div><div class='h'>Actually injected</div><div class='h'>Actually clean</div>" +
-      "<div class='rh'>Flagged</div>" + cl(d.tp, pos, "true positives", "var(--pass)") + cl(d.fp, neg, "false positives", "var(--fail)") +
-      "<div class='rh'>Not flagged</div>" + cl(d.fn, pos, "false negatives", "var(--fail)") + cl(d.tn, neg, "true negatives", "var(--pass)");
-    function rate(v, name, how) { return "<div><b>" + (bad(v) ? "n/a" : fmt(v, v < 0.01 && v > 0 ? "pct2" : "pct1")) + "</b><span>" + name + "<br>" + how + "</span></div>"; }
-    $("cl-rates").innerHTML = rate(pos ? d.precision : null, "Precision", "flags that were really injected") + rate(d.recall, "Recall", "injected records that got flagged") + rate(d.fpr, "False-positive rate", "clean records flagged");
+    $("cl-matrix").innerHTML = "<div></div><div class='h'>Really bad</div><div class='h'>Really fine</div>" +
+      "<div class='rh'>Flagged</div>" + cl(d.tp, pos, "bad, caught", "var(--pass)") + cl(d.fp, neg, "fine, flagged by mistake", "var(--fail)") +
+      "<div class='rh'>Passed</div>" + cl(d.fn, pos, "bad, missed", "var(--fail)") + cl(d.tn, neg, "fine, passed", "var(--pass)");
+    function p(v) { return bad(v) ? "n/a" : fmt(v, v < 0.01 && v > 0 ? "pct2" : "pct1"); }
+    function rate(v, name, tech) { return "<div><b>" + p(v) + "</b><span>" + name + "<br><i>" + tech + "</i></span></div>"; }
+    $("cl-rates").innerHTML = rate(pos ? d.precision : null, "of flagged records really were bad", "precision") + rate(d.recall, "of bad records got caught", "recall") + rate(d.fpr, "of good records flagged by mistake", "false-positive rate");
+    var ph = { low_quality: "With sloppy scans", combined: "With both problems at once", stale: "With outdated data", unseen: "With the surprise problem" }[k];
+    $("cl-plain").textContent = pos
+      ? ph + " in the " + (clBlock === "final" ? "final test" : "design weeks") + ": " + p(d.precision) + " of the records it flagged really were bad, it caught " + p(d.recall) + " of the bad ones, and it wrongly flagged " + p(d.fpr) + " of the good ones."
+      : ph + " there are no broken records to catch, so every flag is a mistake: " + p(d.fpr) + " of good records.";
     var note = {
-      low_quality: "Bulk scans leave a same-minute burst and re-uploads repeat a package id, which is exactly what L1 looks for. That's also why we froze the Guard and tested a defect that leaves neither.",
-      combined: "Same checks on the combined feed. Slightly lower precision: training on every past week puts more honest records in front of the checks.",
-      stale: "No records were injected, so every flag here is a false positive on real data (mostly couriers more than " + V.cfg.guard.l1.dist_max_km + " km from the stop). Precision is undefined, not zero.",
-      unseen: "The early scanner leaves no burst and no duplicate, so L1 is close to blind: this is the failure shown below."
+      low_quality: "Bulk scans leave many packages marked delivered in the same minute, and duplicates repeat a package id. That's exactly what the check looks for, which is why we also ran a surprise test it wasn't built for.",
+      combined: "Slightly less precise: learning from every past week puts more honest records in front of the check.",
+      stale: "Nothing was broken here, so these flags are mistakes on real data, mostly couriers recorded more than " + V.cfg.guard.l1.dist_max_km + " km from the stop.",
+      unseen: "Early scans leave no burst and no duplicate, so the check is nearly blind to them. See \"Where it falls short\"."
     };
     $("cl-note").textContent = note[k] || "";
   }
@@ -869,18 +878,19 @@
   function renderFails() {
     var on = V.final.cells.combined.on, off = V.final.cells.combined.off, r = V.final.cells.reference;
     var items = [
-      "Deferral needs people: " + fmt(V.x.deferMin, "pct1") + "–" + fmt(V.x.deferMax, "pct1") + " of packages go to a dispatcher.",
-      "Less effective data: on the combined feed the Guard down-weights " + fmt(on.downweighted, "pct0") + " of training records (effective sample " + fmt(on.eff_n, "int") + " vs " + fmt(off.eff_n, "int") + ").",
-      "Slower retrains: " + fmt(on.secs, "f1") + " s vs " + fmt(off.secs, "f1") + " s per weekly retrain on the combined feed.",
-      "On clean data: " + fmt(r.on.mae - r.off.mae, "sgn1") + " min MAE (" + fmt(V.x.noHarm, "spct2") + ")."
+      "People: " + fmt(V.x.deferMin, "pct1") + "–" + fmt(V.x.deferMax, "pct1") + " of packages need a dispatcher's decision.",
+      "Less data to learn from: with both problems present, the Guard turns down the weight of " + fmt(on.downweighted, "pct0") + " of records.",
+      "Slower weekly updates: " + fmt(on.secs, "f0") + " s instead of " + fmt(off.secs, "f0") + " s.",
+      "On clean data: " + fmt(r.on.mae - r.off.mae, "sgn1") + " min of error per package (" + fmt(V.x.noHarm, "spct2") + ")."
     ];
     $("fl-trade").innerHTML = items.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
   }
+
   function scoreVal(r) {
     var v = r.value, n = function (k) { return CNAME[k] || k; };
     switch (r.criterion) {
       case "Recovery": return Object.keys(v).map(function (k) { return n(k) + " " + fmt(v[k], "pct1"); }).join(", ");
-      case "No harm": return fmt(v, "spct2") + " MAE";
+      case "No harm": return fmt(v, "spct2") + " error";
       case "Promise quality": return Object.keys(v).map(function (k) { var x = v[k]; return n(k) + ": miss " + fmt(x.miss_on, "pct1") + ", width " + fmt(x.width_off, "f1") + " → " + fmt(x.width_on, "f1") + " min" + (x.passed ? "" : " (fails)"); }).join("; ");
       case "Deferral": return Object.keys(v).map(function (k) { return n(k) + " " + fmt(v[k], "pct1"); }).join(", ");
       case "Rare areas": return Object.keys(v).map(function (k) { return n(k) + " " + fmt(v[k], "spct1"); }).join(", ");
@@ -888,6 +898,25 @@
       case "Beats control": return "Guard " + fmt(v.guard, "f1") + " vs random removal " + fmt(v.random_removal, "f1") + " min";
       default: return JSON.stringify(v);
     }
+  }
+  var GOAL = {
+    "Recovery": "Remove at least half the extra error caused by sloppy scans, alone and combined",
+    "No harm": "Add no more than 3% error when the data is clean",
+    "Promise quality": "Keep promises on time about 80% of the time without making them longer",
+    "Deferral": "Hand no more than 10% of packages to a person",
+    "Rare areas": "Don't make rare areas more than 5% worse",
+    "Detection": "At least 70% of flagged records really are bad",
+    "Beats control": "Do better than deleting the same number of records at random"
+  };
+  function renderGoals() {
+    var fin = V.final.scorecard, dev = V.dev.scorecard;
+    var rows = fin.map(function (r) { return [r, "final test"]; });
+    dev.forEach(function (r) { if (!fin.some(function (f) { return f.criterion === r.criterion; })) rows.push([r, "design weeks"]); });
+    $("sc-goals").innerHTML = rows.map(function (x) {
+      var r = x[0];
+      return "<li class='" + (r.passed ? "ok" : "no") + "'><span class='mark' aria-hidden='true'>" + (r.passed ? "✓" : "✕") + "</span><span><b>" + (r.passed ? "Met" : "Missed") + ".</b> " + esc(GOAL[r.criterion] || r.rule) +
+        " <span class='muted'>(" + esc(scoreVal(r)) + "; " + x[1] + ")</span></span></li>";
+    }).join("");
   }
   function renderScore() {
     var fin = V.final.scorecard, dev = V.dev.scorecard;
@@ -917,7 +946,19 @@
     document.querySelector("main").insertAdjacentHTML("afterbegin", '<div class="err">Some site data didn\'t load (' + esc(e.message) + "). Serve the docs folder over HTTP, for example <code>python -m http.server -d docs 8000</code>, then reload.</div>");
     console.error(e);
   }
-  initTheme(); initNav();
+  function initKeys() {
+    var map = { "0": "top", "1": "poisons", "2": "built", "3": "analysis" };
+    document.addEventListener("keydown", function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target || {}).tagName || "")) return;
+      var id = map[e.key];
+      if (!id) return;
+      e.preventDefault();
+      var el = $(id);
+      el.scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
+      if (id !== "top") { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
+    });
+  }
+  initTheme(); initNav(); initKeys();
   // results.json (a copy of results/results.json) is the source of every result; summary.json only adds the build time
   Promise.all(["results", "timeline", "mechanism", "console", "manifest", "modlog", "text", "summary"].map(function (n) {
     return getJSON("data/" + n + ".json").catch(function (e) { if (n === "text" || n === "summary") return {}; throw e; });
@@ -929,7 +970,7 @@
     initPoisons(); initSortline();
     initWeekly(); initChain(); initClassifier();
     seg("block", function (v) { mxBlock = v; renderMatrix(); });
-    renderCharts(); renderClassifier(); renderFails(); renderScore(); renderFooter();
+    renderCharts(); renderClassifier(); renderFails(); renderGoals(); renderScore(); renderFooter();
     window.addEventListener("resize", function () { clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 200); });
     return Promise.all(["off_p50", "off_p80", "on_p50", "on_p80"].map(function (n) { return getJSON("models/" + n + ".json"); }));
   }).then(function (ms) {

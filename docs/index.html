@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Data Shelf-Life Guard</title>
-<meta name="description" content="W&amp;M AI Club Case-a-thon 2026: when more delivery data makes promises worse, and a three-layer Guard that restores them.">
+<meta name="description" content="W&amp;M AI Club Case-a-thon 2026: how bad delivery data quietly makes delivery promises wrong, and a safeguard that fixes most of it.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Overpass:ital,wght@0,400;0,600;0,700;1,400&display=swap">
@@ -21,10 +21,11 @@
   <a class="brand" href="#top">Shelf-Life Guard</a>
   <nav class="route" aria-label="Presentation sections">
     <div class="route-line" aria-hidden="true"><span class="route-fill" id="route-fill"></span></div>
-    <a href="#poisons" class="stop" data-stop="poisons"><span class="dot" aria-hidden="true"></span><span class="stop-n">1</span> The poisons</a>
-    <a href="#built" class="stop" data-stop="built"><span class="dot" aria-hidden="true"></span><span class="stop-n">2</span> What we built</a>
-    <a href="#analysis" class="stop" data-stop="analysis"><span class="dot" aria-hidden="true"></span><span class="stop-n">3</span> Analysis</a>
+    <a href="#poisons" class="stop" data-stop="poisons" aria-keyshortcuts="1"><span class="dot" aria-hidden="true"></span>What goes wrong</a>
+    <a href="#built" class="stop" data-stop="built" aria-keyshortcuts="2"><span class="dot" aria-hidden="true"></span>What we built</a>
+    <a href="#analysis" class="stop" data-stop="analysis" aria-keyshortcuts="3"><span class="dot" aria-hidden="true"></span>Does it work?</a>
   </nav>
+  <span class="keys" aria-hidden="true">Press 1, 2 or 3</span>
   <button id="theme" class="ghost" type="button" aria-label="Switch between light and dark theme">Theme</button>
 </header>
 
@@ -33,175 +34,182 @@
 <!-- HERO -->
 <section class="hero" aria-labelledby="hero-h">
   <div class="hero-text">
-    <h1 id="hero-h">When does more delivery data make a promise worse?</h1>
-    <p class="lede">A dispatcher in Chongqing accepts a package and has to tell the customer when it will arrive. Two LightGBM models, retrained every week on recent deliveries, set that promise. Whatever enters the weekly feed enters the promise.</p>
-    <p class="lede">We degraded that feed the way real operations do, offline, on six months of real LaDe deliveries. Then we measured what broke and built a Guard that undoes most of it. We also show where it doesn't.</p>
+    <h1 id="hero-h">Bad data quietly makes delivery promises wrong.</h1>
+    <p class="lede">When a courier picks up a package, the system tells the customer when it will arrive. That estimate comes from an AI model that relearns every week from recent deliveries. If the delivery records feeding it go bad, the promises go bad too, and nothing on screen warns anyone.</p>
+    <p class="lede">We tested this on <span data-v="manifest.rows" data-f="int"></span> real deliveries from Chongqing, broke the data in realistic ways, and built a safeguard, the <b>Guard</b>, that catches most of the damage.</p>
   </div>
   <figure class="slip" aria-labelledby="slip-cap">
     <div class="slip-head">
-      <span>Promise slip</span>
-      <span class="slip-id">computed live in your browser</span>
+      <span>Same package, two answers</span>
+      <span class="slip-id">calculated live on this page</span>
     </div>
-    <p class="slip-pkg" id="slip-pkg">Loading the trained models…</p>
+    <p class="slip-pkg" id="slip-pkg">Loading the prediction model…</p>
     <div class="slip-rows">
       <div class="slip-row off">
-        <span class="slip-k">Guard off</span>
+        <span class="slip-k">Without the Guard</span>
         <span class="slip-v" id="slip-off">–</span>
       </div>
       <div class="slip-row on">
-        <span class="slip-k">Guard on</span>
+        <span class="slip-k">With the Guard</span>
         <span class="slip-v" id="slip-on">–</span>
       </div>
     </div>
-    <figcaption id="slip-cap" class="slip-cap">Same package, same week-<span data-v="console.week" data-f="int"></span> models. The only difference is whether the courier's bulk-scanned records were allowed into the history the model reads.</figcaption>
+    <figcaption id="slip-cap" class="slip-cap">This courier has been marking deliveries in bulk at the end of the day. Without the Guard, those sloppy records push the promise out by <b id="slip-diff">hours</b>.</figcaption>
   </figure>
 </section>
 
-<!-- 1 POISONS -->
+<!-- 1 WHAT GOES WRONG -->
 <section class="part" id="poisons" aria-labelledby="poisons-h">
   <div class="part-head">
-    <p class="part-n">Stop 1 of 3</p>
-    <h2 id="poisons-h">The poisons</h2>
-    <p>Nobody attacks this system. Data just goes bad the way it does in real operations. We injected five accidental defects into an in-memory copy of the feed, each one logged, and each aimed at a specific stage of the pipeline. The untouched data is the <em>reference</em>.</p>
-  </div>
-
-  <div class="stages" aria-label="Pipeline stages a defect can hit">
-    <span class="stage s-train">Weekly retraining: which records the model learns from</span>
-    <span class="stage s-label">Training labels: the delivery times it learns</span>
-    <span class="stage s-serve">Serve-time inputs: the features it reads at acceptance</span>
+    <p class="part-n">Part 1 of 3</p>
+    <h2 id="poisons-h">What goes wrong with the data</h2>
+    <p class="takeaway">Old data wasn't the real problem. Unreliable sources were.</p>
+    <p>Nobody hacked anything. We recreated five ordinary ways delivery data goes bad, one at a time and all together, and measured what each one did to the promises.</p>
   </div>
 
   <div class="labels">
-    <!-- A stale history -->
     <article class="label" id="p-history" style="--c: var(--stale)">
-      <div class="label-stub"><span class="stage s-train">Weekly retraining</span><span class="cond">Part of “stale”</span></div>
-      <h3>Stale history</h3>
-      <p>The retraining job stops aging out old weeks. Every past week counts as much as last week.</p>
-      <div class="mini" data-anim="history" role="img" aria-label="Animation: each week the reference model learns from the last four weeks, while the stale model's window stretches back to week 0."></div>
+      <div class="label-stub"><span class="stage s-train">Hits: what the model learns from</span><span class="cond">Outdated data</span></div>
+      <h3>Old history piles up</h3>
+      <p>The system keeps learning from every past week, even months-old ones, as if they mattered as much as last week.</p>
+      <div class="mini" data-anim="history" role="img" aria-label="Animation: the normal system learns from the last four weeks; the outdated one keeps stretching back to May."></div>
       <dl class="facts">
-        <dt>Fields changed</dt><dd>None edited. The training window becomes all past weeks, equal weight, instead of the last <span data-v="cfg.splits.window_weeks" data-f="int"></span>.</dd>
-        <dt>Severity</dt><dd>Grows every week: the average training record is <span data-v="x.staleAgeEnd" data-f="f0"></span> days old by week 25, against <span data-v="x.refAgeEnd" data-f="f0"></span> days for the reference.</dd>
-        <dt>Source mix</dt><dd>All couriers, unchanged.</dd>
-        <dt>Stands in for</dt><dd>A retraining pipeline that keeps appending data and never drops anything.</dd>
+        <dt>How big</dt><dd>By the last week, the average record it learns from is <span data-v="x.staleAgeEnd" data-f="f0"></span> days old, against <span data-v="x.refAgeEnd" data-f="f0"></span> days normally.</dd>
+        <dt>Real-world version</dt><dd>A data pipeline nobody ever cleans up.</dd>
       </dl>
     </article>
 
-    <!-- B frozen features -->
     <article class="label" id="p-frozen" style="--c: var(--stale)">
-      <div class="label-stub"><span class="stage s-serve">Serve-time inputs</span><span class="cond">Part of “stale”</span></div>
-      <h3>Frozen features</h3>
-      <p>The feature store stops refreshing. Courier and area history keeps being served, just older every day.</p>
-      <div class="mini" data-anim="frozen" role="img" aria-label="Animation: the feature store refreshes daily, then stops after 25 June, and the age of the features served climbs."></div>
+      <div class="label-stub"><span class="stage s-serve">Hits: the inputs to each prediction</span><span class="cond">Outdated data</span></div>
+      <h3>Stats stop updating</h3>
+      <p>The courier and neighborhood averages the model reads stop refreshing on <span data-v="cfg.degrade.stale.freeze_data_through"></span>. The model keeps using them anyway.</p>
+      <div class="mini" data-anim="frozen" role="img" aria-label="Animation: the stats refresh daily, then stop at the end of June, and get older every day after."></div>
       <dl class="facts">
-        <dt>Fields changed</dt><dd><code>courier_hist_mean</code>, <code>area_hist_mean</code> (training rows read the same frozen store).</dd>
-        <dt>Timing</dt><dd>Built from data through <span data-v="cfg.degrade.stale.freeze_data_through"></span>, frozen from week 8 on: <span data-v="x.mod.stale_features" data-f="int"></span> records served stale history.</dd>
-        <dt>Severity</dt><dd>Served features average <span data-v="x.featAgeEnd" data-f="f0"></span> days old in week 25. Fresh features are 1 day old.</dd>
-        <dt>Stands in for</dt><dd>A nightly feature job that fails silently while the model keeps serving.</dd>
+        <dt>How big</dt><dd><span data-v="x.mod.stale_features" data-f="int"></span> predictions made with stale stats, which averaged <span data-v="x.featAgeEnd" data-f="f0"></span> days old by the last week.</dd>
+        <dt>Real-world version</dt><dd>A nightly job fails, and nobody notices.</dd>
       </dl>
     </article>
 
-    <!-- C sloppy -->
     <article class="label" id="p-sloppy" style="--c: var(--lq)">
-      <div class="label-stub"><span class="stage s-label">Training labels</span><span class="stage s-serve">Serve-time inputs</span><span class="cond">“Low quality”</span></div>
-      <h3>The sloppy source</h3>
-      <p>Some couriers stop scanning at the door. They mark a whole stack delivered at the end of the shift, and their handheld later re-uploads records it already sent.</p>
-      <div class="mini" data-anim="sloppy" role="img" aria-label="Animation: a courier's delivery scans spread across the day slide to the end of the shift, then copies of some records appear."></div>
+      <div class="label-stub"><span class="stage s-label">Hits: what the model learns from and its inputs</span><span class="cond">Sloppy scans</span></div>
+      <h3>Sloppy scanning</h3>
+      <p><span data-v="x.oneIn" data-f="raw"></span> couriers stop scanning at the door. They mark a whole stack delivered at the end of the shift, and their device uploads some records twice.</p>
+      <div class="mini" data-anim="sloppy" role="img" aria-label="Animation: a courier's delivery scans spread across the day slide to the end of the shift, then duplicate copies appear."></div>
       <dl class="facts">
-        <dt>Fields changed</dt><dd><code>delivery_time</code>, so the duration label runs long. The history features and open workload built from those records inflate too.</dd>
-        <dt>Severity</dt><dd>Bulk scans hit <span data-v="cfg.degrade.low_quality.p_start" data-f="pct0"></span> of a sloppy courier's packages in week <span data-v="cfg.degrade.low_quality.start_week" data-f="int"></span>, rising to <span data-v="cfg.degrade.low_quality.p_max" data-f="pct0"></span> by week 21. From week <span data-v="cfg.degrade.low_quality.dup_start_week" data-f="int"></span>, <span data-v="cfg.degrade.low_quality.dup_prob" data-f="pct0"></span> of their records are uploaded twice.</dd>
-        <dt>Source mix</dt><dd><span data-v="cfg.degrade.low_quality.sloppy_share" data-f="pct0"></span> of couriers (<span data-v="x.mod.lq_couriers" data-f="int"></span>): <span data-v="x.mod.bulk" data-f="int"></span> bulk scans plus <span data-v="x.mod.dup" data-f="int"></span> duplicate copies. At peak, injected records carry <span data-v="x.lqInjPeak" data-f="pct0"></span> of the training weight. The re-uploads give the worst source <em>more</em> volume than its packages earn.</dd>
-        <dt>Stands in for</dt><dd>End-of-shift bulk scanning and a flaky device sync.</dd>
+        <dt>How big</dt><dd>It starts with <span data-v="cfg.degrade.low_quality.p_start" data-f="pct0"></span> of their packages and grows to <span data-v="cfg.degrade.low_quality.p_max" data-f="pct0"></span>: <span data-v="x.mod.bulk" data-f="int"></span> wrong delivery times plus <span data-v="x.mod.dup" data-f="int"></span> duplicates. At worst, bad records make up <span data-v="x.lqInjPeak" data-f="pct0"></span> of what the model learns from.</dd>
+        <dt>Why it's sneaky</dt><dd>The duplicates give the sloppiest couriers <em>more</em> say, not less.</dd>
+        <dt>Real-world version</dt><dd>End-of-shift bulk scanning and a glitchy handheld.</dd>
       </dl>
     </article>
 
-    <!-- D combined -->
     <article class="label" id="p-combined" style="--c: var(--comb)">
-      <div class="label-stub"><span class="stage s-train">Retraining</span><span class="stage s-label">Labels</span><span class="stage s-serve">Inputs</span><span class="cond">“Combined”</span></div>
-      <h3>Combined</h3>
-      <p>Stale history, frozen features and the sloppy source, all at once. It's the realistic case: problems arrive together.</p>
-      <div class="mini" data-anim="combined" role="img" aria-label="Bar chart of the extra error each condition causes on development weeks without the Guard."></div>
+      <div class="label-stub"><span class="stage s-train">Hits: everything above</span><span class="cond">Both at once</span></div>
+      <h3>Everything at once</h3>
+      <p>Outdated data and sloppy scanning together. That's the realistic case: problems arrive in bunches.</p>
+      <div class="mini" data-anim="combined" role="img" aria-label="Bar chart of how many extra minutes of error each problem causes without the Guard."></div>
       <dl class="facts">
-        <dt>Fields changed</dt><dd>Everything above.</dd>
-        <dt>Surprise</dt><dd>Combined does <em>less</em> damage than the sloppy source alone. Training on all past weeks dilutes the recent sloppy records, and the frozen store stopped absorbing their inflated durations in late June.</dd>
-        <dt>Stands in for</dt><dd>A neglected pipeline: old jobs, an outage and a bad device fleet in the same quarter.</dd>
+        <dt>Surprise</dt><dd>Together they did <em>less</em> damage than sloppy scanning alone. All that old history diluted the recent bad records.</dd>
+        <dt>Real-world version</dt><dd>A neglected system: old jobs, an outage and bad devices in the same quarter.</dd>
       </dl>
     </article>
 
-    <!-- E unseen -->
     <article class="label held" id="p-early" style="--c: var(--unseen)">
-      <div class="label-stub"><span class="stage s-label">Training labels</span><span class="stage s-serve">Serve-time inputs</span><span class="cond">Held out, never tuned on</span></div>
-      <h3>The early scanner</h3>
-      <p>A different group of couriers marks packages delivered <em>before</em> they arrive. We kept this one secret from ourselves until the Guard was frozen.</p>
-      <div class="mini" data-anim="early" role="img" aria-label="Animation: delivery scans jump earlier, to between 40 and 70 percent of the true delivery time."></div>
+      <div class="label-stub"><span class="stage s-label">Hits: what the model learns from and its inputs</span><span class="cond">Surprise test</span></div>
+      <h3>A problem we hid from ourselves</h3>
+      <p>Some couriers mark packages delivered <em>before</em> they arrive. We never used this one while designing the Guard. It was saved for the final exam.</p>
+      <div class="mini" data-anim="early" role="img" aria-label="Animation: recorded delivery times shrink to between 40 and 70 percent of the real time."></div>
       <dl class="facts">
-        <dt>Fields changed</dt><dd><code>delivery_time</code> := accept time + <span data-v="cfg.degrade.unseen.frac_low" data-f="pct0"></span>–<span data-v="cfg.degrade.unseen.frac_high" data-f="pct0"></span> of the true duration. Labels and history run short.</dd>
-        <dt>Severity</dt><dd><span data-v="cfg.degrade.unseen.share" data-f="pct0"></span> of couriers (<span data-v="x.mod.early_couriers" data-f="int"></span>), every package from week <span data-v="cfg.degrade.unseen.start_week" data-f="int"></span>: <span data-v="x.mod.early" data-f="int"></span> records.</dd>
-        <dt>Source mix</dt><dd>Disjoint from the sloppy couriers; applied on top of the reference data.</dd>
-        <dt>Stands in for</dt><dd>Gaming an on-time target. It leaves no burst and no duplicate, so it looks clean.</dd>
+        <dt>How big</dt><dd><span data-v="cfg.degrade.unseen.share" data-f="pct0"></span> of couriers, every package from week <span data-v="cfg.degrade.unseen.start_week" data-f="int"></span> on: <span data-v="x.mod.early" data-f="int"></span> records.</dd>
+        <dt>Real-world version</dt><dd>Gaming an on-time target. It looks perfectly clean.</dd>
       </dl>
     </article>
   </div>
 
   <div class="finding" aria-labelledby="old-h">
     <div class="finding-text">
-      <h3 id="old-h">Old data turned out not to be the problem</h3>
-      <p>We expected a shelf-life curve: too little history is noisy, too much is out of date. It never appeared. Longer training windows never hurt, and frozen features cost nothing (<span data-v="x.frozenFeatGap" data-f="sgn1"></span> min MAE vs the reference).</p>
-      <p>What does decay is the <em>model</em>. One trained once and never retrained loses <span data-v="x.frozenModelGap" data-f="sgn1"></span> min. In this feed, the source's reputation matters far more than its age.</p>
-      <p class="note">Development weeks 4–21, seed 0. MAE is mean absolute error of the expected delivery duration, in minutes; lower is better.</p>
+      <h3 id="old-h">Old data wasn't the problem</h3>
+      <p>We expected data to have a shelf life: too little history is noisy, too much is out of date. That's not what happened. More history never made predictions worse, and stats that stopped updating cost nothing (<span data-v="x.frozenFeatGap" data-f="sgn1"></span> min).</p>
+      <p>What does go stale is the <em>model</em>. One that's never retrained gets <span data-v="x.frozenModelGap" data-f="sgn1"></span> minutes worse per package. Where the data comes from mattered far more than how old it was.</p>
     </div>
     <figure class="chart-fig">
-      <div class="chart" id="ch-shelf" data-h="260"></div>
-      <figcaption>Mean MAE by training-window length. No U-curve: the error falls or stays flat as the window grows.</figcaption>
+      <div class="chart" id="ch-shelf" data-h="270"></div>
+      <figcaption>Average error per package (minutes, lower is better) by how many weeks of history the model learns from. The lines only go down.</figcaption>
     </figure>
   </div>
+
+  <details class="tech">
+    <summary>How it works: exactly what we changed</summary>
+    <div class="tech-body">
+      <p>Every change was applied to an in-memory copy of the LaDe Chongqing delivery data and written to a modification log. The untouched data is the <em>reference</em>. Scoring always uses the real delivery times.</p>
+      <ul>
+        <li><b>Outdated data (“stale”)</b> = old history plus frozen stats. Training uses all past weeks at equal weight instead of the last <span data-v="cfg.splits.window_weeks" data-f="int"></span>. The history features <code>courier_hist_mean</code> and <code>area_hist_mean</code> are frozen with data through <span data-v="cfg.degrade.stale.freeze_data_through"></span> (from week 8).</li>
+        <li><b>Sloppy scans (“low quality”)</b>: <span data-v="cfg.degrade.low_quality.sloppy_share" data-f="pct0"></span> of couriers (<span data-v="x.mod.lq_couriers" data-f="int"></span>). Bulk scans move <code>delivery_time</code> to the courier's last scan that day, with probability <span data-v="cfg.degrade.low_quality.p_start" data-f="pct0"></span> in week <span data-v="cfg.degrade.low_quality.start_week" data-f="int"></span>, rising linearly to <span data-v="cfg.degrade.low_quality.p_max" data-f="pct0"></span>. From week <span data-v="cfg.degrade.low_quality.dup_start_week" data-f="int"></span>, <span data-v="cfg.degrade.low_quality.dup_prob" data-f="pct0"></span> of their records are re-uploaded with the same package id. This changes training labels and the history features built from them.</li>
+        <li><b>Both (“combined”)</b>: all of the above.</li>
+        <li><b>Surprise test (“unseen”, early scan)</b>: <span data-v="cfg.degrade.unseen.share" data-f="pct0"></span> of couriers (<span data-v="x.mod.early_couriers" data-f="int"></span>), disjoint from the sloppy ones. From week <span data-v="cfg.degrade.unseen.start_week" data-f="int"></span>, <code>delivery_time</code> = accept time + <span data-v="cfg.degrade.unseen.frac_low" data-f="pct0"></span>–<span data-v="cfg.degrade.unseen.frac_high" data-f="pct0"></span> of the true duration. Scored only in held-out weeks.</li>
+      </ul>
+    </div>
+  </details>
 </section>
 
-<!-- 2 BUILT -->
+<!-- 2 WHAT WE BUILT -->
 <section class="part" id="built" aria-labelledby="built-h">
   <div class="part-head">
-    <p class="part-n">Stop 2 of 3</p>
-    <h2 id="built-h">What we built</h2>
-    <p>Two gradient-boosted models predict each package: the <b>median</b> duration (what we expect) and the <b>80th percentile</b> (the promise). Both are refit from scratch every week on the previous <span data-v="cfg.splits.window_weeks" data-f="int"></span> weeks. The Guard wraps that loop in three layers, one per place the poison gets in.</p>
+    <p class="part-n">Part 2 of 3</p>
+    <h2 id="built-h">What we built: the Guard</h2>
+    <p class="takeaway">Three checks, placed where bad data gets in.</p>
+    <p>For each package, the prediction system gives two numbers: the most likely delivery time and the <b>promise</b>, a time we expect to beat 4 times out of 5. It relearns from the last <span data-v="cfg.splits.window_weeks" data-f="int"></span> weeks of deliveries every week. The Guard wraps around that loop.</p>
   </div>
 
   <figure class="line-fig" aria-labelledby="line-cap">
     <div class="line-tools">
       <button type="button" class="ghost" id="line-pause" aria-pressed="false">Pause</button>
     </div>
-    <div id="sortline" class="sortline" role="img" aria-label="Animated diagram. Top lane, weekly training: records from the delivery feed pass ingest checks, where flagged records are quarantined at low weight; training weights shrink unreliable sources; the median and P80 models are retrained weekly. Bottom lane, each new package: the models predict, the serve-time check sends most packages a calibrated promise and defers some to a dispatcher, whose corrections feed back into source reputation."></div>
-    <figcaption id="line-cap">The sorting line. Token mix follows the low-quality feed in held-out weeks: <span data-v="x.lqInjFinal" data-f="pct1"></span> of training weight comes from injected records before the Guard, and <span data-v="final.cells.low_quality.on.defer" data-f="pct1"></span> of packages are deferred to a person. Injected records turn dark plum; the Guard never sees that label, only the scans.</figcaption>
+    <div id="sortline" class="sortline" role="img" aria-label="Animated diagram. Top lane, every week: delivery records pass a check at the door, where suspicious records shrink to low weight, then get weighed by trust before the model relearns. Bottom lane, every package: the model predicts, then a final check either sends the promise or hands the package to a person, whose decisions feed back into which sources are trusted."></div>
+    <figcaption id="line-cap">Each square is a record. Plum squares are bad records: in the final test weeks they were <span data-v="x.lqInjFinal" data-f="pct0"></span> of what the model learned from. Yellow squares are the <span data-v="final.cells.low_quality.on.defer" data-f="pct1"></span> of packages handed to a person.</figcaption>
   </figure>
 
   <div class="layers">
     <div class="layer">
-      <h3><span class="layer-n">L1</span> Ingest checks</h3>
-      <p>Label-free tests on every incoming record: <span data-v="cfg.guard.l1.burst_min_packages" data-f="int"></span> or more packages scanned by one courier in the same minute, a repeated package id, a non-positive duration, a GPS fix older than <span data-v="cfg.guard.l1.gps_age_max_min" data-f="int"></span> min, or a courier more than <span data-v="cfg.guard.l1.dist_max_km" data-f="int"></span> km from the stop.</p>
-      <p>Flagged records are <b>quarantined, not deleted</b>: weight × <span data-v="cfg.guard.l1.quarantine_weight"></span> in training, left out of the history features.</p>
+      <h3><span class="layer-n">1</span> Check at the door</h3>
+      <p>Every new record is screened for telltale signs: many packages marked delivered in the same minute, the same package uploaded twice, impossible times or distances.</p>
+      <p>Suspicious records aren't deleted. They count for only <span data-v="cfg.guard.l1.quarantine_weight" data-f="pct0"></span> as much, so nothing is lost if the check is wrong.</p>
     </div>
     <div class="layer">
-      <h3><span class="layer-n">L2</span> Trust-weighted training</h3>
-      <p>Each record's weight = recency × source reputation × flag. Recency halves every <span data-v="cfg.guard.l2.half_life_weeks" data-f="int"></span> weeks. A courier's reputation comes from their flag rate and how far their durations sit from other couriers in the same area and hour, shrunk toward neutral for couriers with few records.</p>
-      <p>Stale history is <b>kept</b>, because it stayed informative. A feature-store alert goes to a person instead.</p>
+      <h3><span class="layer-n">2</span> Weigh by trust</h3>
+      <p>Recent records count more than old ones. Couriers whose records keep disagreeing with others working the same area at the same hour count less.</p>
+      <p>Old stats are kept, because they were still useful. A person gets an alert instead.</p>
     </div>
     <div class="layer">
-      <h3><span class="layer-n">L3</span> Serve-time promise and deferral</h3>
-      <p>The promise is calibrated (conformal P80) on the most recent week, per area type, so it lands near <span data-v="cfg.guard.l3.target_coverage" data-f="pct0"></span> on-time.</p>
-      <p>A package goes to a dispatcher instead of getting an automatic promise when its area is new, its GPS is stale, or its interval is more than <span data-v="cfg.guard.l3.defer_width_k" data-f="f0"></span>× its area type's usual width.</p>
+      <h3><span class="layer-n">3</span> Final check before promising</h3>
+      <p>The promise is tuned to be on time about <span data-v="cfg.guard.l3.target_coverage" data-f="pct0"></span> of the time.</p>
+      <p>If a package is unusual, like a brand-new area or a prediction the model is very unsure about, a dispatcher decides instead of the system.</p>
     </div>
   </div>
 
-  <!-- oversight walkthrough -->
+  <details class="tech">
+    <summary>How it works: the technical version</summary>
+    <div class="tech-body">
+      <p>The prediction system is two LightGBM gradient-boosted regressors: a median model and an 80th-percentile (P80) model. Both are refit from scratch every week on the previous <span data-v="cfg.splits.window_weeks" data-f="int"></span> weeks.</p>
+      <ul>
+        <li><b>L1 ingest checks</b>: <span data-v="cfg.guard.l1.burst_min_packages" data-f="int"></span>+ packages from one courier scanned in the same minute, a repeated package id, a non-positive duration, a GPS fix older than <span data-v="cfg.guard.l1.gps_age_max_min" data-f="int"></span> min, or a courier more than <span data-v="cfg.guard.l1.dist_max_km" data-f="int"></span> km from the stop. Flagged rows get training weight × <span data-v="cfg.guard.l1.quarantine_weight"></span> and are excluded from history features. The checks never read the injection labels.</li>
+        <li><b>L2 trust-weighted training</b>: weight = recency × reputation × flag. Recency halves every <span data-v="cfg.guard.l2.half_life_weeks" data-f="int"></span> weeks. Reputation comes from the courier's flag rate and robust disagreement with peers in the same area × hour, shrunk toward neutral with a <span data-v="cfg.guard.l2.prior_records" data-f="int"></span>-record prior and applied at λ = <span data-v="cfg.guard.l2.reputation_lambda"></span>. Per-courier weight is capped at <span data-v="cfg.guard.l2.courier_cap_mult"></span>× the median.</li>
+        <li><b>L3 serve-time check</b>: conformal P80 calibrated per area type on the most recent week. Defer when the area is unseen in the window, GPS is stale, or the P80 − median interval is more than <span data-v="cfg.guard.l3.defer_width_k"></span>× the area type's median width.</li>
+      </ul>
+    </div>
+  </details>
+
+  <!-- walkthrough -->
   <div class="walk" id="walk" aria-labelledby="walk-h">
     <div class="walk-head">
-      <h3 id="walk-h">A person in the loop: one unreliable prediction</h3>
-      <p>Predictions below come from the exported week-<span data-v="console.week" data-f="int"></span> models running in this page. Scenarios are built from aggregate values (medians over many packages), not from a real package.</p>
+      <h3 id="walk-h">Live demo: a prediction the Guard won't trust</h3>
+      <p>Pick a case. Every number below is calculated live by the real trained models running in this page. Cases are built from typical values, not from a real customer's package.</p>
       <label class="pick">Case <select id="sc-pick"></select></label>
       <p class="muted" id="sc-desc"></p>
     </div>
 
     <ol class="steps">
       <li class="step">
-        <h4>The prediction</h4>
+        <h4>What the system would promise</h4>
         <div class="compare">
           <div class="side off" id="w-off"></div>
           <div class="side on" id="w-on"></div>
@@ -209,11 +217,11 @@
         <div id="w-decision"></div>
       </li>
       <li class="step">
-        <h4>The evidence</h4>
+        <h4>What the Guard checked</h4>
         <div class="tablewrap"><table id="w-rules" class="t"></table></div>
       </li>
       <li class="step">
-        <h4>Data age and quality</h4>
+        <h4>How fresh and reliable the data is</h4>
         <div class="gauges" id="w-quality"></div>
       </li>
       <li class="step">
@@ -221,142 +229,150 @@
         <div id="w-explain" class="explain"></div>
       </li>
       <li class="step">
-        <h4>Decide: approve, correct, or escalate</h4>
+        <h4>What the dispatcher does</h4>
         <div class="act">
-          <button type="button" class="btn" id="act-approve">Approve promise</button>
-          <label class="inline">Correct to <input id="act-min" type="number" min="0" step="5" inputmode="numeric"> min</label>
-          <button type="button" class="btn" id="act-correct">Save correction</button>
-          <label class="inline grow">Note <input id="act-note" type="text" placeholder="Optional, goes to the data steward"></label>
-          <button type="button" class="btn warn" id="act-escalate">Escalate to data steward</button>
+          <button type="button" class="btn" id="act-approve">Approve the promise</button>
+          <label class="inline">Change it to <input id="act-min" type="number" min="0" step="5" inputmode="numeric"> min</label>
+          <button type="button" class="btn" id="act-correct">Save change</button>
+          <label class="inline grow">Note <input id="act-note" type="text" placeholder="Optional, goes to the data team"></label>
+          <button type="button" class="btn warn" id="act-escalate">Send to the data team</button>
         </div>
         <div class="effort">
-          <div><span class="k">Model latency (measured here)</span><span class="v" id="ef-model">–</span></div>
-          <div><span class="k">Your review time on this case</span><span class="v" id="ef-human">–</span></div>
-          <div><span class="k">Planning assumption per deferral</span><span class="v"><span data-v="console.review_seconds" data-f="int"></span> s</span></div>
+          <div><span class="k">Computer time for this prediction</span><span class="v" id="ef-model">–</span></div>
+          <div><span class="k">Your time on this case</span><span class="v" id="ef-human">–</span></div>
+          <div><span class="k">Time we budget per review</span><span class="v"><span data-v="console.review_seconds" data-f="int"></span> s</span></div>
         </div>
-        <p class="note">Review time is measured from when this case opened to your action. It's a demo stopwatch, not a user study, and the <span data-v="console.review_seconds" data-f="int"></span> s planning figure is an assumption to be measured in a pilot.</p>
-        <div class="log" id="act-log" aria-live="polite">No actions logged yet.</div>
+        <p class="note">Your time is measured from when this case opened to your click. It's a demo stopwatch, not a study. The <span data-v="console.review_seconds" data-f="int"></span>-second budget is an assumption a pilot would measure.</p>
+        <div class="log" id="act-log" aria-live="polite">Nothing logged yet.</div>
       </li>
     </ol>
 
     <div class="roles">
-      <div><h4>Dispatcher</h4><p>Uses the promise. Handles deferred packages: approves, corrects, or escalates.</p></div>
-      <div><h4>Data steward</h4><p>Reviews quarantined records and low-reputation sources weekly. Can restore a courier or escalate a scanner problem.</p></div>
-      <div><h4>Model owner</h4><p>Signs off each weekly retrain against the scorecard and alerts before it serves. Owns rollback.</p></div>
-      <div><h4>Operations manager</h4><p>Approves the pilot, its district and its stop conditions.</p></div>
+      <div><h4>Dispatcher</h4><p>Gives customers the promise. Handles the packages the Guard flags: approves, changes, or sends them on.</p></div>
+      <div><h4>Data team</h4><p>Reviews suspicious records and couriers every week. Can restore a courier's trust or chase a broken scanner.</p></div>
+      <div><h4>Model owner</h4><p>Approves each weekly update before it goes live, and can roll it back.</p></div>
+      <div><h4>Operations manager</h4><p>Approves the pilot and decides when to stop it.</p></div>
     </div>
     <div class="scale" id="ef-scale"></div>
   </div>
 </section>
 
-<!-- 3 ANALYSIS -->
+<!-- 3 DOES IT WORK -->
 <section class="part" id="analysis" aria-labelledby="analysis-h">
   <div class="part-head">
-    <p class="part-n">Stop 3 of 3</p>
-    <h2 id="analysis-h">Analysis and performance</h2>
-    <p>The Guard's settings were frozen (git tag <code>guard-v1-frozen</code>) before held-out weeks 22–25 were scored, once. Those weeks include Golden Week and a volume surge. Every number is a mean over 3 seeds.</p>
+    <p class="part-n">Part 3 of 3</p>
+    <h2 id="analysis-h">Does it work?</h2>
+    <p class="takeaway">It undoes most of the damage, costs almost nothing when data is clean, and misses one kind of problem.</p>
+    <p>We locked the Guard's settings first, then tested it once on four weeks it had never seen, including China's Golden Week holiday and a large surge in volume.</p>
   </div>
 
   <div class="counters">
-    <div class="counter"><span class="num" data-count="final.recovery.low_quality.recovery" data-f="pct0">–</span><span class="cap">of the MAE lost to the sloppy source, recovered</span></div>
-    <div class="counter"><span class="num" data-count="final.recovery.combined.recovery" data-f="pct0">–</span><span class="cap">recovered under sloppy + stale data</span></div>
-    <div class="counter"><span class="num"><span data-count="x.deferMin" data-f="pct0">–</span>–<span data-count="x.deferMax" data-f="pct0">–</span></span><span class="cap">of packages deferred to a dispatcher</span></div>
-    <div class="counter"><span class="num" data-count="x.noHarm" data-f="spct2">–</span><span class="cap">MAE on clean data: the cost of running the Guard when nothing is wrong</span></div>
-    <div class="counter"><span class="num"><span data-count="headline.scorecard_passed" data-f="int">–</span> of <span data-v="headline.scorecard_total" data-f="int"></span></span><span class="cap">held-out scorecard lines passed</span></div>
+    <div class="counter"><span class="num" data-count="final.recovery.low_quality.recovery" data-f="pct0">–</span><span class="cap">of the extra error from sloppy scanning removed</span></div>
+    <div class="counter"><span class="num" data-count="final.recovery.combined.recovery" data-f="pct0">–</span><span class="cap">removed when sloppy scans and outdated data hit together</span></div>
+    <div class="counter"><span class="num"><span data-count="x.deferMin" data-f="pct0">–</span>–<span data-count="x.deferMax" data-f="pct0">–</span></span><span class="cap">of packages handed to a person to check</span></div>
+    <div class="counter"><span class="num" data-count="x.noHarm" data-f="spct2">–</span><span class="cap">extra error when nothing is wrong: essentially zero</span></div>
+    <div class="counter"><span class="num"><span data-count="headline.scorecard_passed" data-f="int">–</span> of <span data-v="headline.scorecard_total" data-f="int"></span></span><span class="cap">goals met in the final test</span></div>
   </div>
 
-  <!-- matrix -->
   <div class="block" aria-labelledby="mx-h">
     <div class="block-head">
-      <h3 id="mx-h">The experiment matrix</h3>
+      <h3 id="mx-h">Before and after</h3>
       <div class="seg" role="group" aria-label="Weeks shown">
-        <button type="button" data-block="final" aria-pressed="true">Held-out weeks 22–25</button>
-        <button type="button" data-block="dev" aria-pressed="false">Development weeks 4–21</button>
+        <button type="button" data-block="final" aria-pressed="true">Final test</button>
+        <button type="button" data-block="dev" aria-pressed="false">Design weeks</button>
       </div>
     </div>
-    <p>Four conditions, each with and without the Guard, scored on the same packages against the untouched delivery times. Each cell shows MAE in minutes ± the spread across seeds.</p>
-    <div class="tablewrap"><table class="t matrix" id="mx-table"></table></div>
+    <p>Average error per package, in minutes: how far the predicted delivery time was from the real one. Same packages, with and without the Guard.</p>
     <figure class="chart-fig wide">
-      <div class="chart" id="ch-dumbbell" data-h="230"></div>
-      <figcaption>MAE without the Guard (open circle) and with it (filled), against the reference (vertical line). Shorter is closer to clean.</figcaption>
+      <div class="chart" id="ch-dumbbell" data-h="250"></div>
+      <figcaption>Open circle: without the Guard. Filled circle: with it. The blue line is clean data. Closer to the line is better.</figcaption>
     </figure>
+    <div class="tablewrap"><table class="t matrix" id="mx-table"></table></div>
   </div>
 
-  <!-- weekly -->
   <div class="block" aria-labelledby="wk-h">
-    <div class="block-head">
-      <h3 id="wk-h">Week by week</h3>
-    </div>
-    <p>Not one before/after number: the gap opens in week 5, the first week sloppy records enter training, and widens as bulk scanning ramps up. Shaded weeks were held out until after the freeze. Bands show the range across 3 seeds.</p>
+    <div class="block-head"><h3 id="wk-h">Week by week</h3></div>
+    <p>The damage starts the first week sloppy records arrive and grows as the scanning gets sloppier. With the Guard (dashed lines), it stays close to zero. Shaded: the final test weeks.</p>
     <div class="controls">
-      <label>Measure <select id="wk-metric"></select></label>
+      <label>Show <select id="wk-metric"></select></label>
       <div class="seg" role="group" aria-label="Guard">
-        <button type="button" data-guard="both" aria-pressed="true">Off and on</button>
-        <button type="button" data-guard="off" aria-pressed="false">Off</button>
-        <button type="button" data-guard="on" aria-pressed="false">On</button>
+        <button type="button" data-guard="both" aria-pressed="true">With and without</button>
+        <button type="button" data-guard="off" aria-pressed="false">Without</button>
+        <button type="button" data-guard="on" aria-pressed="false">With</button>
       </div>
       <fieldset class="checks" id="wk-conds"><legend class="sr">Conditions</legend></fieldset>
     </div>
     <figure class="chart-fig wide">
-      <div class="chart" id="ch-weekly" data-h="340"></div>
+      <div class="chart" id="ch-weekly" data-h="360"></div>
       <div class="legend" id="lg-weekly"></div>
     </figure>
-    <p class="sub">Alongside the model: data age, quality and volume for <select id="wk-track" aria-label="Condition for data tracks"></select> (solid Guard off, dashed Guard on)</p>
-    <div class="tracks">
-      <figure><div class="chart" id="tk-inj" data-h="150"></div><figcaption>Injected records, share of training weight</figcaption></figure>
-      <figure><div class="chart" id="tk-age" data-h="150"></div><figcaption>Training-record age, days (weighted mean)</figcaption></figure>
-      <figure><div class="chart" id="tk-feat" data-h="150"></div><figcaption>History-feature age at serve time, days</figcaption></figure>
-      <figure><div class="chart" id="tk-vol" data-h="150"></div><figcaption>Packages per test week</figcaption></figure>
-    </div>
+    <details class="tech">
+      <summary>How it works: what was in the data each week</summary>
+      <div class="tech-body">
+        <p class="sub">Data age, quality and volume for <select id="wk-track" aria-label="Condition for data tracks"></select> (solid without the Guard, dashed with it). Bands on the chart above show the range across 3 random seeds.</p>
+        <div class="tracks">
+          <figure><div class="chart" id="tk-inj" data-h="150"></div><figcaption>Bad records, share of what the model learns from</figcaption></figure>
+          <figure><div class="chart" id="tk-age" data-h="150"></div><figcaption>Age of training records, days</figcaption></figure>
+          <figure><div class="chart" id="tk-feat" data-h="150"></div><figcaption>Age of courier/area stats used, days</figcaption></figure>
+          <figure><div class="chart" id="tk-vol" data-h="150"></div><figcaption>Packages per week</figcaption></figure>
+        </div>
+      </div>
+    </details>
   </div>
 
-  <!-- mechanism -->
-  <div class="block" aria-labelledby="ch-h">
-    <div class="block-head">
-      <h3 id="ch-h">The chain: data → model → decision</h3>
-      <label>Condition <select id="chain-cond"></select></label>
-    </div>
-    <p>Each link moves in the same week, which is why we believe the explanation and not just the outcome. Solid: Guard off. Dashed: Guard on.</p>
-    <ol class="chain">
-      <li><figure><div class="chart" id="cn-data" data-h="160"></div><figcaption id="cn-data-c">Data</figcaption></figure></li>
-      <li><figure><div class="chart" id="cn-label" data-h="160"></div><figcaption>Training signal: KS distance, training labels vs. true durations</figcaption></figure></li>
-      <li><figure><div class="chart" id="cn-model" data-h="160"></div><figcaption>Model: promise shift on a fixed probe grid vs. reference, min</figcaption></figure></li>
-      <li><figure><div class="chart" id="cn-dec" data-h="160"></div><figcaption>Decision: MAE gap vs. reference, min</figcaption></figure></li>
-    </ol>
-    <p id="chain-text" class="chain-text"></p>
+  <div class="block" aria-labelledby="ct-h">
+    <div class="block-head"><h3 id="ct-h">Removing the right records is what matters</h3></div>
     <div class="pair">
       <figure class="chart-fig">
-        <div class="chart" id="ch-ctrl" data-h="220"></div>
-        <figcaption id="ch-ctrl-c"></figcaption>
+        <div class="chart" id="ch-ctrl" data-h="230"></div>
+        <figcaption>Extra error from sloppy scans under each fix. Throwing away the same number of records at random made things <em>worse</em> than doing nothing.</figcaption>
       </figure>
       <figure class="chart-fig">
-        <div class="chart" id="ch-dose" data-h="220"></div>
-        <figcaption id="ch-dose-c"></figcaption>
+        <div class="chart" id="ch-dose" data-h="230"></div>
+        <figcaption>The more couriers scan sloppily, the worse the error gets, unless the Guard is on.</figcaption>
       </figure>
     </div>
+    <details class="tech">
+      <summary>How it works: proving the cause, link by link</summary>
+      <div class="tech-body">
+        <div class="controls"><label>Problem <select id="chain-cond"></select></label><span class="muted">Solid: without the Guard. Dashed: with it.</span></div>
+        <ol class="chain">
+          <li><figure><div class="chart" id="cn-data" data-h="160"></div><figcaption id="cn-data-c">Data</figcaption></figure></li>
+          <li><figure><div class="chart" id="cn-label" data-h="160"></div><figcaption>What it learns: KS distance, training labels vs. true durations</figcaption></figure></li>
+          <li><figure><div class="chart" id="cn-model" data-h="160"></div><figcaption>Model: promise shift on a fixed set of test packages, min</figcaption></figure></li>
+          <li><figure><div class="chart" id="cn-dec" data-h="160"></div><figcaption>Decision: extra error vs clean data, min</figcaption></figure></li>
+        </ol>
+        <p id="chain-text" class="chain-text"></p>
+        <p class="note">Controls and dose-response: development weeks, seed 0. Main results: mean over 3 seeds.</p>
+      </div>
+    </details>
   </div>
 
-  <!-- classifier -->
   <div class="block" aria-labelledby="cl-h">
-    <div class="block-head">
-      <h3 id="cl-h">The one classifier: L1 ingest flags</h3>
-    </div>
+    <div class="block-head"><h3 id="cl-h">How good is the check at the door?</h3></div>
     <div class="cl-grid">
       <div class="cl-text">
-        <p>The delivery-time models are <b>regressors</b>, scored by error in minutes and promise-miss rate. We don't turn them into a classification task. The only binary decision in the system is L1's: is this incoming training record <b>flagged</b> or <b>clean</b>?</p>
-        <dl class="facts tight">
-          <dt>Positive class</dt><dd>A record the injector changed: a bulk-scanned delivery time or a duplicate re-upload (an early scan, for the held-out defect). The label is used <em>only</em> to score the flags; the Guard never reads it.</dd>
-          <dt>Prediction</dt><dd>Flagged by any L1 check.</dd>
-          <dt>What it drives</dt><dd>Flagged records keep weight × <span data-v="cfg.guard.l1.quarantine_weight"></span> in training, are left out of history features, and raise their courier's flag rate in L2's reputation. No package is rejected on a flag.</dd>
-          <dt>Counting unit</dt><dd id="cl-unit"></dd>
-        </dl>
+        <p>The check at the door is the one place the system makes a yes/no call: <b>is this incoming record suspicious?</b> Here's how often it got that right, compared with the records we know we broke.</p>
+        <p class="cl-plain" id="cl-plain"></p>
+        <details class="tech">
+          <summary>How it works: definitions</summary>
+          <div class="tech-body">
+            <dl class="facts tight">
+              <dt>Positive class</dt><dd>A training record the injector changed (a bulk-scanned time or a duplicate re-upload; an early scan for the surprise test). The label is used only to score the check; the Guard never reads it.</dd>
+              <dt>Prediction</dt><dd>Flagged by any L1 check.</dd>
+              <dt>What it drives</dt><dd>Training weight × <span data-v="cfg.guard.l1.quarantine_weight"></span>, exclusion from history features, and the courier's flag rate. No package is rejected on a flag.</dd>
+              <dt>Counting unit</dt><dd id="cl-unit"></dd>
+              <dt>Note</dt><dd>The delivery-time models themselves are regressors, scored by error in minutes and late-promise rate, not as classifiers.</dd>
+            </dl>
+          </div>
+        </details>
       </div>
       <div class="cl-panel">
         <div class="controls">
-          <label>Condition <select id="cl-cond"></select></label>
+          <label>Problem <select id="cl-cond"></select></label>
           <div class="seg" role="group" aria-label="Weeks shown">
-            <button type="button" data-clblock="final" aria-pressed="true">Held-out</button>
-            <button type="button" data-clblock="dev" aria-pressed="false">Development</button>
+            <button type="button" data-clblock="final" aria-pressed="true">Final test</button>
+            <button type="button" data-clblock="dev" aria-pressed="false">Design weeks</button>
           </div>
         </div>
         <div class="confusion" id="cl-matrix"></div>
@@ -366,54 +382,53 @@
     </div>
   </div>
 
-  <!-- failures -->
   <div class="block fail" aria-labelledby="fl-h">
-    <div class="block-head"><h3 id="fl-h">Where it fails</h3></div>
+    <div class="block-head"><h3 id="fl-h">Where it falls short</h3></div>
     <div class="fails">
       <div class="failcase">
-        <p class="big-fail"><span data-v="final.recovery.unseen.recovery" data-f="pct0"></span> recovered</p>
-        <h4>The early scanner got past every layer</h4>
-        <p>L1 caught <span data-v="final.detector.unseen.recall" data-f="pct2"></span> of its records: no burst, no duplicate, nothing to see. Reputation reweights training records, but the early scanners' shortened history features reach the model directly. The MAE gap was <span data-v="final.recovery.unseen.gap" data-f="f1"></span> min, and the Guard closed almost none of it.</p>
-        <p class="muted">Untested next fix: let low reputation also gate a courier's history features, and add a check for labels that shift short.</p>
+        <p class="big-fail">Only <span data-v="final.recovery.unseen.recovery" data-f="pct0"></span> fixed</p>
+        <h4>The surprise problem got through</h4>
+        <p>Couriers who mark packages delivered early leave no obvious trace. The check at the door caught only <span data-v="final.detector.unseen.recall" data-f="pct2"></span> of their records, and the Guard removed almost none of the <span data-v="final.recovery.unseen.gap" data-f="f1"></span> extra minutes they caused.</p>
+        <p class="muted">Next fix (not tested yet): stop using a low-trust courier's own stats, and watch for delivery times that suddenly get shorter.</p>
       </div>
       <div class="failcase">
-        <p class="big-fail">Wider promise</p>
-        <h4>On clean data, the calibrated promise costs width</h4>
-        <p>The unguarded model already misses about <span data-v="final.cells.reference.off.miss" data-f="pct0"></span> of promises. Calibrating to <span data-v="cfg.guard.l3.target_coverage" data-f="pct0"></span> on-time needs a longer promise: reference <span data-v="final.cells.reference.off.width" data-f="f0"></span> → <span data-v="final.cells.reference.on.width" data-f="f0"></span> min (<span data-v="x.wRefFinal" data-f="spct1"></span>), stale <span data-v="x.wStaleFinal" data-f="spct1"></span>; on development weeks <span data-v="x.wRefDev" data-f="spct1"></span>. That fails our own Promise-quality line, and we kept the strict reading.</p>
+        <p class="big-fail">Longer promises</p>
+        <h4>On clean data, promises got a little longer</h4>
+        <p>To be on time about <span data-v="cfg.guard.l3.target_coverage" data-f="pct0"></span> of the time, the Guard's promise runs <span data-v="x.wRefFinal" data-f="spct1"></span> longer on clean data (<span data-v="final.cells.reference.off.width" data-f="f0"></span> → <span data-v="final.cells.reference.on.width" data-f="f0"></span> min). That misses one of our own goals, and we're reporting it as a miss.</p>
       </div>
       <div class="failcase">
         <p class="big-fail">Trade-offs</p>
-        <h4>What the Guard costs</h4>
+        <h4>What it costs to run</h4>
         <ul id="fl-trade"></ul>
       </div>
     </div>
   </div>
 
-  <!-- scorecard -->
   <div class="block" aria-labelledby="sc-h">
-    <div class="block-head"><h3 id="sc-h">Scorecard</h3></div>
-    <p>Targets written before the results. Held-out weeks were scored once, after the freeze.</p>
-    <div class="tablewrap"><table class="t score" id="sc-table"></table></div>
+    <div class="block-head"><h3 id="sc-h">Our goals, set before we saw the results</h3></div>
+    <ul class="goals" id="sc-goals"></ul>
+    <details class="tech">
+      <summary>How it works: full scorecard with exact values</summary>
+      <div class="tech-body"><div class="tablewrap"><table class="t score" id="sc-table"></table></div></div>
+    </details>
   </div>
 
-  <!-- next -->
   <div class="block" aria-labelledby="nx-h">
-    <div class="block-head"><h3 id="nx-h">Next step: a bounded pilot</h3></div>
+    <div class="block-head"><h3 id="nx-h">What we recommend next: a small, safe pilot</h3></div>
     <ol class="pilot">
-      <li><b>Shadow mode, one district, 4 weeks.</b> The Guard computes promises and deferrals next to the current process; dispatchers see them but don't act on them.</li>
-      <li><b>Checkpoints at weeks 2 and 4,</b> run by the model owner: miss rate 17–23%, deferrals at or under 10%, no area type more than 5% worse, steward queue cleared weekly, and real review time measured.</li>
-      <li><b>Go / no-go at week 4,</b> decided by the operations manager.</li>
-      <li><b>Stop if</b> miss rate leaves 15–25% two weeks running, deferrals pass 15% in a week, an area type gets 10% worse, or the steward backlog is older than a week.</li>
+      <li><b>Run it quietly for 4 weeks in one district.</b> The Guard makes its promises alongside the current process. Dispatchers see them but don't act on them.</li>
+      <li><b>Check in at weeks 2 and 4.</b> The model owner checks that promises stay on time 77–83% of the time, no more than 10% of packages need a person, and no area gets more than 5% worse. We also measure how long reviews really take.</li>
+      <li><b>Go or no-go at week 4.</b> The operations manager decides.</li>
+      <li><b>Stop early if</b> on-time promises drift outside 75–85% two weeks in a row, more than 15% of packages need a person in a week, any area gets 10% worse, or the data team falls more than a week behind.</li>
     </ol>
     <div class="dont">
-      <h4>Don't use this system when</h4>
+      <h4>Don't use it when</h4>
       <ul>
-        <li>labels come from a single source: reputation needs peers to compare against;</li>
-        <li>the defect leaves no trace in scans, GPS or timing, like the early scanner;</li>
-        <li>nobody is staffed to handle deferrals and review quarantined sources;</li>
-        <li>a new city has no history yet: recency, reputation and calibration all need a few weeks.</li>
+        <li>all the data comes from a single source: the Guard needs others to compare against;</li>
+        <li>the problem leaves no trace in the scans, like the early scanners;</li>
+        <li>nobody is staffed to handle the flagged packages;</li>
+        <li>a new city has no history yet: it needs a few weeks first.</li>
       </ul>
-      <p class="muted">Not testable on this data: GPS-age checks (GPS fix age is 0 in every LaDe row) and label latency (we assume last week's labels have all arrived).</p>
     </div>
   </div>
 </section>
@@ -424,7 +439,7 @@
     <div>
       <h3>Data</h3>
       <p id="ft-data"></p>
-      <p>Licenses: repository metadata Apache-2.0; the authors' paper CC BY-NC 4.0. Used for non-commercial research. This site shows only aggregates, constructed scenarios and trained models. No raw rows, courier ids or locations, and the raw files aren't redistributed.</p>
+      <p>Licenses: repository metadata Apache-2.0; the authors' paper CC BY-NC 4.0. Used for non-commercial research. This site shows only aggregates, constructed cases and trained models. No raw records, courier ids or locations, and the raw files aren't redistributed.</p>
     </div>
     <div>
       <h3>Reproduce</h3>
@@ -434,11 +449,11 @@
     <div>
       <h3>Downloads</h3>
       <ul>
-        <li><a href="data/results.json" download>results.json</a>: every cell, the scorecard, headline numbers</li>
-        <li><a href="data/weekly_metrics.csv" download>weekly_metrics.csv</a>: one row per run and test week</li>
+        <li><a href="data/results.json" download>results.json</a>: every result, the scorecard, headline numbers</li>
+        <li><a href="data/weekly_metrics.csv" download>weekly_metrics.csv</a>: one row per run and week</li>
         <li><a href="data/manifest.json" download>manifest.json</a>: data manifest</li>
       </ul>
-      <p class="muted">AI disclosure: the models under test are the LightGBM regressors and the Guard. Claude (Anthropic) wrote the pipeline and this site from the team's plan.</p>
+      <p class="muted">AI disclosure: the AI under test is the LightGBM prediction models and the Guard. Claude (Anthropic) wrote the pipeline and this site from the team's plan.</p>
     </div>
   </div>
   <p class="foot-line">W&amp;M AI Club Case-a-thon 2026. <span id="ft-build"></span></p>
