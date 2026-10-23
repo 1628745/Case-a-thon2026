@@ -105,7 +105,7 @@ async function run(m) {
   call("globals().__setitem__('OPT', json.loads(OPT_JSON)) or True");
   call("globals().__setitem__('PREP', lab.prepare(RAW, CFG, int(OPT.get('year', YEAR)), OPT.get('budget', 'quick'), float(OPT.get('sloppy_share', 0.2)))) or True");
   var prep_s = (performance.now() - t) / 1000;
-  var r = JSON.parse(call("lab.to_json(dict(lab.run_lab(*PREP, OPT, progress=_PROGRESS, salt=SALT), config={'config_hash': LAB['config_hash'], 'guard_hash': LAB['guard_hash'], 'guard': CFG['guard'], 'tag': LAB['guard_tag']}, source='browser'))"));
+  var r = JSON.parse(call("lab.to_json(dict(lab.run_lab(*PREP, OPT, progress=_PROGRESS, salt=OPT.get('salt') or SALT), config={'config_hash': LAB['config_hash'], 'guard_hash': LAB['guard_hash'], 'guard': CFG['guard'], 'tag': LAB['guard_tag']}, source='browser'))"));
   r.timings.prepare_s = prep_s;
   r.timings.end_to_end_s = (performance.now() - t) / 1000;
   r.versions.pyodide = py.version;

@@ -356,7 +356,10 @@ def _verdict(runs, injected):
         ref, off, on = r["reference"]["mae"], r["degraded_off"]["mae"], r["degraded_on"]["mae"]
         gap, floor = off - ref, 0.01 * ref
         rec = (off - on) / gap if gap > floor else None
-        if gap <= floor:
+        if on > off + floor:
+            v = "red"
+            s = f"The Guard made things worse here: MAE {on:.1f} min with it, {off:.1f} without (reference {ref:.1f})."
+        elif gap <= floor:
             v = "neutral"
             s = (f"The defect did not measurably hurt this dataset (MAE {off:.1f} vs {ref:.1f} min). "
                  f"With the Guard on, MAE is {on:.1f} min.")
@@ -424,9 +427,9 @@ def _summarize(runs, k, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, 
     fq = flags.loc[flags["any"].to_numpy()]
     why = [";".join(c for c in ["nonpos", "burst", "dup", "gps_age", "far"] if row[c]) for _, row in fq.iterrows()]
     quarantine = {"columns": ["file_line", "courier", "reasons", "note"],
-                  "rows": [[int(s) + 2, h, w, "copy made by the poison dial" if d else ""]
-                           for s, h, w, d in zip(q.src_row.to_numpy(), courier_hash(q.courier_id.to_numpy(), salt), why,
-                                                 q.is_dup.to_numpy())]}
+                  "rows": [[int(s) + 2, h, w, "copy made by the poison dial" if d else "changed by the poison dial" if i else ""]
+                           for s, h, w, d, i in zip(q.src_row.to_numpy(), courier_hash(q.courier_id.to_numpy(), salt), why,
+                                                    q.is_dup.to_numpy(), q.injected.to_numpy())]}
     inj_sum = {}
     for r in log:
         inj_sum[r["mechanism"]] = inj_sum.get(r["mechanism"], 0) + int(r["rows_affected"])

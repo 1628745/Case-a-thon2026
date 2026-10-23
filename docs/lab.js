@@ -13,6 +13,7 @@
   var REASON = { hist: "history features too old", gps: "courier GPS fix older than 30 minutes", area: "area not seen in the training weeks", width: "promise more than 4x the usual width for this area type" };
   var S = { worker: null, ready: false, readyP: null, versions: null, file: null, audit: null, hasFile: false, pending: null,
     preset: "sloppy", budget: "quick", result: null, prev: null, release: {}, running: false, cached: false, sweep: null, t0: 0, timer: null };
+  S.salt = (function () { var a = new Uint8Array(8); crypto.getRandomValues(a); return Array.prototype.map.call(a, function (b) { return ("0" + b.toString(16)).slice(-2); }).join(""); })();
   window.__lab = S; // read by tests/e2e_lab.py
 
   function $(id) { return document.getElementById(id); }
@@ -123,15 +124,22 @@
   drop.addEventListener("drop", function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) takeFile(e.dataTransfer.files[0]); });
   $("file").addEventListener("change", function () { if (this.files[0]) takeFile(this.files[0]); });
   $("use-sample").addEventListener("click", function () {
+    if (busy()) return;
     $("use-sample").disabled = true;
     fetch("data/lab_sample.csv").then(function (r) { if (!r.ok) throw new Error("lab_sample.csv returned " + r.status); return r.arrayBuffer(); })
       .then(function (buf) { $("use-sample").disabled = false; setFile("lab_sample.csv (synthetic)", buf, true); })
       .catch(function (e) { $("use-sample").disabled = false; errBox("load-err", "Could not load the sample: " + e.message); });
   });
-  $("year").addEventListener("change", function () { if (S.file) doAudit().catch(function () { /* shown in step 2 */ }); });
+  $("year").addEventListener("change", function () { if (busy()) return; if (S.file) doAudit().catch(function () { /* shown in step 2 */ }); });
   $("show-cached").addEventListener("click", showCached);
 
+  function busy() {
+    if (!S.running) return false;
+    errBox("load-err", "A run is in progress. Wait for it or press Cancel before loading another file or changing the year.");
+    return true;
+  }
   function takeFile(f) {
+    if (busy()) return;
     if (f.size > 400e6) { errBox("load-err", f.name + " is " + mb(f.size) + ": too large for a browser tab. Try a single city file (Chongqing is 145 MB)."); return; }
     errBox("load-err", "");
     f.arrayBuffer().then(function (buf) { setFile(f.name, buf, false); }, function (e) { errBox("load-err", "Could not read the file: " + e.message); });
@@ -218,13 +226,18 @@
   function mechs() { return Array.prototype.filter.call(document.querySelectorAll("[data-mech]"), function (c) { return c.checked; }).map(function (c) { return c.getAttribute("data-mech"); }); }
   function options(extra) {
     return Object.assign({ preset: S.preset, mechanisms: mechs(), sloppy_share: +$("share").value / 100, seed: Math.max(0, parseInt($("seed").value, 10) || 0),
-      budget: S.budget, year: +$("year").value, release: Object.keys(S.release) }, extra || {});
+      budget: S.budget, year: +$("year").value, release: Object.keys(S.release), salt: S.salt }, extra || {});
   }
   setPreset("sloppy");
 
   // ------------------------------------------------------------ 4 train
   $("run").addEventListener("click", function () { S.release = {}; S.prev = null; runExperiment(); });
-  $("rerun").addEventListener("click", function () { S.prev = S.result; runExperiment(); });
+  $("rerun").addEventListener("click", function () {
+    var p = S.result.settings;
+    S.prev = S.result;
+    runExperiment({ preset: p.preset, mechanisms: p.mechanisms, sloppy_share: p.sloppy_share === null ? 0.2 : p.sloppy_share,
+      seed: p.seed, budget: p.budget, year: p.year }); // same settings as the run being overridden; only the releases change
+  });
   $("cancel").addEventListener("click", cancel);
 
   function startTimer(label) {
@@ -243,12 +256,12 @@
     logLine(m.msg);
   }
   function stopRun() { S.running = false; clearInterval(S.timer); updateButtons(); }
-  function runExperiment() {
+  function runExperiment(fixed) {
     if (S.running) return;
     S.running = true; errBox("run-err", ""); updateButtons();
     startTimer(S.ready ? "Starting" : "Waiting for Python to load");
     if (!S.ready) logLine("Waiting for Python to finish loading");
-    var opt = options();
+    var opt = options(fixed);
     var need = S.hasFile ? Promise.resolve() : (logLine("Reloading your file into Python"), doAudit());
     var tRun = 0;
     need.then(function () {
@@ -594,6 +607,7 @@
 
   // ------------------------------------------------------------ cached fallback
   function showCached() {
+    if (busy()) return;
     fetch("data/lab_cached_yantai.json").then(function (r) { if (!r.ok) throw new Error("returned " + r.status); return r.json(); }).then(function (r) {
       S.result = r; S.prev = null; S.cached = true;
       show("cached-badge", true);

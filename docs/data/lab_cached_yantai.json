@@ -87,11 +87,11 @@
    "eff_n": 30978.0,
    "frac_downweighted": 0.0,
    "n_test": 9515,
-   "train_s": 0.4250011669937521,
-   "predict_ms_per_pkg": 0.010223581187213667,
+   "train_s": 0.4385319580032956,
+   "predict_ms_per_pkg": 0.010120787390953599,
    "feature_age_days": 1.0,
    "label": "Reference (as uploaded, Guard off)",
-   "run_s": 0.5913918750011362
+   "run_s": 0.6051034580159467
   },
   {
    "key": "degraded_off",
@@ -108,11 +108,11 @@
    "eff_n": 33674.0,
    "frac_downweighted": 0.0,
    "n_test": 9515,
-   "train_s": 0.4270361670060083,
-   "predict_ms_per_pkg": 0.009170629744062174,
+   "train_s": 0.4450444170215633,
+   "predict_ms_per_pkg": 0.009612125590251767,
    "feature_age_days": 1.0,
    "label": "Poisoned, Guard off",
-   "run_s": 0.5830474169924855
+   "run_s": 0.6042357090045698
   },
   {
    "key": "degraded_on",
@@ -129,11 +129,11 @@
    "eff_n": 17481.34107057458,
    "frac_downweighted": 0.8599512977371265,
    "n_test": 9515,
-   "train_s": 1.2245416670048144,
-   "predict_ms_per_pkg": 0.01044709238060273,
+   "train_s": 1.2666604580008425,
+   "predict_ms_per_pkg": 0.01036696878902485,
    "feature_age_days": 1.0,
    "label": "Poisoned, Guard on",
-   "run_s": 1.5372671249788254
+   "run_s": 1.5996490419784095
   }
  ],
  "headline": {
@@ -142,7 +142,7 @@
   "noise_floor_min": 0.9573750004926944,
   "recovery_pct": 92.48169540475674,
   "verdict": "green",
-  "sentence": "The Guard recovered 92% of the damage: MAE 136.2 -> 98.8 min (reference 95.7)."
+  "sentence": "The Guard recovered 92% of the damage: MAE 136.2 \u2192 98.8 min (reference 95.7)."
  },
  "guard": {
   "n_train": 33674,
@@ -221,7 +221,7 @@
   "n_couriers": 138,
   "lowest": [
    {
-    "courier": "22239557",
+    "courier": "6e72e654",
     "n": 311,
     "flag_rate": 0.932475884244373,
     "z": -0.8901937127791919,
@@ -231,7 +231,7 @@
     "released": false
    },
    {
-    "courier": "01b21490",
+    "courier": "fb1dcda1",
     "n": 180,
     "flag_rate": 0.9,
     "z": 1.2466379903239415,
@@ -241,7 +241,7 @@
     "released": false
    },
    {
-    "courier": "097d8ed1",
+    "courier": "aed4e5ed",
     "n": 581,
     "flag_rate": 0.6695352839931153,
     "z": -1.4000013718257625,
@@ -251,7 +251,7 @@
     "released": false
    },
    {
-    "courier": "6797e51f",
+    "courier": "12dabb54",
     "n": 1531,
     "flag_rate": 0.6492488569562378,
     "z": 1.3604822700627497,
@@ -261,7 +261,7 @@
     "released": false
    },
    {
-    "courier": "68f95fe5",
+    "courier": "8f83b0f7",
     "n": 1040,
     "flag_rate": 0.635576923076923,
     "z": -1.3491457140754017,
@@ -271,7 +271,7 @@
     "released": false
    },
    {
-    "courier": "62f5c773",
+    "courier": "be8d604c",
     "n": 787,
     "flag_rate": 0.662007623888183,
     "z": -1.172270345441193,
@@ -281,7 +281,7 @@
     "released": false
    },
    {
-    "courier": "d60fdd0c",
+    "courier": "24eb37ac",
     "n": 911,
     "flag_rate": 0.6597145993413831,
     "z": -0.20556598084907143,
@@ -291,7 +291,7 @@
     "released": false
    },
    {
-    "courier": "f16e25a4",
+    "courier": "51845553",
     "n": 516,
     "flag_rate": 0.6744186046511628,
     "z": -0.8032795211606377,
@@ -301,7 +301,7 @@
     "released": false
    },
    {
-    "courier": "aff95068",
+    "courier": "538ed8af",
     "n": 955,
     "flag_rate": 0.6554973821989529,
     "z": -0.7671379566208506,
@@ -311,7 +311,7 @@
     "released": false
    },
    {
-    "courier": "991f5c61",
+    "courier": "86e14fa2",
     "n": 479,
     "flag_rate": 0.6722338204592901,
     "z": 0.394885703441582,
@@ -875,8 +875,8 @@
   "deferred": 468,
   "sec_per_pkg_assumed": 45,
   "dispatcher_min": 351.0,
-  "train_s_guard": 1.2245416670048144,
-  "predict_ms_per_pkg": 0.01044709238060273,
+  "train_s_guard": 1.2666604580008425,
+  "predict_ms_per_pkg": 0.01036696878902485,
   "n_test": 9515
  },
  "versions": {
@@ -897,12 +897,12 @@
   "n": 6011
  },
  "timings": {
-  "inject_s": 0.09218637499725446,
-  "score_s": 0.09821500000543892,
-  "total_s": 2.903540957981022,
-  "audit_s": 0.3337082499929238,
-  "prepare_s": 0.21416162501554936,
-  "end_to_end_s": 3.4538634170021396
+  "inject_s": 0.08578641599160619,
+  "score_s": 0.10073937498964369,
+  "total_s": 2.996808791998774,
+  "audit_s": 0.3479405000107363,
+  "prepare_s": 0.21928604098502547,
+  "end_to_end_s": 3.5667167080100626
  },
  "config": {
   "config_hash": "e54a0bf568c4",

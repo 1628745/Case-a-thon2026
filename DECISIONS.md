@@ -144,3 +144,14 @@ Every judgment call made during the autonomous build: what, why, alternatives.
 ## L9: nav link
 - index.html: one `<a class="ghost tryit" href="lab.html">Try it</a>` after the route nav (inside the nav would break its 3-stop layout and the van), and the keys hint now mentions 5. app.js: key 5 goes to lab.html. style.css: one new `.tryit` rule appended, no existing rule changed.
 - The smoke test compares against a baseline recorded on the unchanged page (`logs/smoke_baseline.json`: 4 sections, 28 SVGs, 10 chart SVGs). Its 390 px check reloads the page, because index.html lays out its decorations at load.
+
+## L10: review subagent and fixes
+The review subagent found no high-severity issues, 2 medium and 4 low. Fixed:
+- **(medium, honesty)** The verdict is now red whenever Guard-on MAE exceeds Guard-off by more than the noise floor, even when the defect itself was under the floor. Previously such a run showed neutral. Test added.
+- **(medium)** Loading another file, changing the year or opening the cached result during a run is now refused with a message. Before, the audit replaced the pending run and the page stuck at "Running".
+- **(medium)** The courier-hash salt is held by the page and passed with each run, so hashes and releases survive a Cancel (which restarts the worker).
+- **(low)** Rerun reuses the previous run's settings, so the "With N released" diff is only due to the releases.
+- **(low)** In quarantine.csv, rows the poison dial changed are noted "changed by the poison dial", as well as its duplicate copies.
+
+Not fixed:
+- **(low)** `file_line = src_row + 2` assumes one header line and no blank lines (pandas skips blank lines). LaDe files have none; this is documented here.

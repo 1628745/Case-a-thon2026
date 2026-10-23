@@ -138,3 +138,10 @@ def test_publication_strip_has_no_coordinates(raw, cfg):
 def _csv(df):
     import io
     return io.StringIO(df.to_csv(index=False))
+
+
+def test_verdict_red_when_guard_hurts_under_noise_floor():
+    runs = [{"key": "reference", "mae": 50.0}, {"key": "degraded_off", "mae": 50.2}, {"key": "degraded_on", "mae": 56.0}]
+    assert src_lab._verdict(runs, True)["verdict"] == "red"
+    runs[2]["mae"] = 50.1
+    assert src_lab._verdict(runs, True)["verdict"] == "neutral"
