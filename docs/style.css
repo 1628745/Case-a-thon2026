@@ -460,9 +460,6 @@ section#built > .roles { margin-top: 22px; }
 .m-thin { stroke-width: 6; }
 .m-route { fill: none; stroke: var(--ink); stroke-width: 3; stroke-dasharray: 1 9; stroke-linecap: round; }
 .m-pin-in { fill: var(--panel); }
-.slip-bar { display: block; width: 100%; max-width: 240px; height: auto; margin: 14px 0 2px; }
-.slip-bar rect { fill: var(--ink); }
-.slip-bar text { font: 9px var(--body); fill: var(--muted); letter-spacing: .3em; }
 .layer-ic { width: 42px; height: 42px; display: block; margin-bottom: 8px; color: var(--ink); fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .layer-ic .beam { stroke: var(--lq); }
 .street-end { max-width: 1240px; margin: 48px auto 0; padding: 0 32px; color: var(--ink); }
