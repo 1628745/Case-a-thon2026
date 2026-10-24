@@ -158,3 +158,12 @@ Not fixed:
 
 ## After DONE: Advanced panel removed (user request, 2026-10-24)
 - The "Advanced" panel under Poison it (sloppy-share slider, per-mechanism checkboxes, seed, Quick/Full budget) is gone. Each preset now fixes its defects; sloppy share is 20%, seed 0 and the budget Quick, all the previous defaults. The worker and `src/lab.py` still accept those options, so `scripts/lab_native.py` can still vary them.
+
+## After DONE: simpler Results section (user request, 2026-10-24)
+- **Removed:** "Sweep the dial" (UI, the worker's `sweep` message and `lab.run_sweep`), the courier reputation table and histogram, and the "Explain a prediction" waterfalls, dropdown and feature table.
+- **Courier trust** is now one sentence under the detector scorecard. Python adds `reputation.n_below_half`, `below_half` (salted hashes) and `early_caught` to support it.
+- **One "Dispatcher review" panel** replaces the separate compute-vs-human block. It shows deferred count with reasons, dispatcher time at an assumed 45 s, training time and ms per prediction. It also shows one package card picked in this order: deferred, then a sloppy courier's package, then the lowest-reputation courier's. The card gives the L3 result and reasons, history age, GPS fix age, and the promise with vs without the Guard; Python now adds `hist_age_days` and `gps_age_min` to each explained package.
+- **"Restore trust for the flagged couriers and rerun"** releases every courier below 0.5 with the existing release logic, keeping the previous run's settings. The button is disabled when no courier is below 0.5 and on the cached result.
+- **Condensed and collapsed:** "What the Guard did" is one line of three numbers, and Run facts is a collapsed `<details>`.
+- **Unseen preset restored** (a teammate had removed it) so the Guard's failure case can be shown live. On the synthetic sample it recovers only 4%.
+- The Python explain block (contributions etc.) is still computed and still lands in `lab_report.json`; only its UI is gone. The cached Yantai JSON was regenerated with the new fields.

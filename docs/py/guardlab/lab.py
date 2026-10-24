@@ -422,7 +422,9 @@ def _summarize(runs, k, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, 
                    released=bool(i in release)) for i, r in low.iterrows()]
     reputation = {"edges": edges.tolist(), "counts": counts.astype(int).tolist(), "n_couriers": int(len(rep)),
                   "lowest": lowest, "n_sloppy": len(cs), "n_early": len(ce),
-                  "sloppy_caught": int(sum(rep.loc[rep.index.isin(list(cs)), "rep"] < 0.5)) if cs else None}
+                  "n_below_half": int((rep.rep < 0.5).sum()), "below_half": rep.loc[rep.rep < 0.5, "hash"].tolist(),
+                  "sloppy_caught": int(sum(rep.loc[rep.index.isin(list(cs)), "rep"] < 0.5)) if cs else None,
+                  "early_caught": int(sum(rep.loc[rep.index.isin(list(ce)), "rep"] < 0.5)) if ce else None}
     q = tr.loc[flags["any"].to_numpy()]
     fq = flags.loc[flags["any"].to_numpy()]
     why = [";".join(c for c in ["nonpos", "burst", "dup", "gps_age", "far"] if row[c]) for _, row in fq.iterrows()]
@@ -456,28 +458,6 @@ def _summarize(runs, k, base, feed, log, cs, ce, mechs, opt, lcfg, split, keep, 
             "headline": _verdict(runs, injected), "guard": guard, "detector": det, "reputation": reputation,
             "injection": inj_sum, "explain": explain(k, off_key, on_key, cs, base, split),
             "human": human, "versions": versions(), "quarantine": quarantine}
-
-
-def run_sweep(base, lcfg, split, opt, shares=(0.0, 0.2, 0.4, 0.6), progress=None):
-    """Dose-response on this file: sloppy-courier share -> MAE Guard off / on (bulk scans + duplicates)."""
-    prog = progress or (lambda step, pct, msg: None)
-    seed = int(opt.get("seed", 0))
-    g = copy.deepcopy(lcfg["guard"])
-    keep = cap_couriers(base, split["train_weeks"], BUDGETS[opt.get("budget", "quick")]["row_cap"], seed)
-    pts = []
-    for i, sh in enumerate(shares):
-        c = copy.deepcopy(lcfg)
-        c["degrade"]["low_quality"]["sloppy_share"] = float(sh)
-        feed = build_lab_feed(base, ["bulk", "dup"] if sh > 0 else [], seed, c)[0]
-        row = {"share": float(sh)}
-        for j, guard in enumerate([False, True]):
-            prog("sweep", int(100 * (2 * i + j) / (2 * len(shares))), f"Sloppy share {100 * sh:.0f}%, Guard {'on' if guard else 'off'}")
-            m, _ = one_run("sweep", feed, c, g, split, seed, guard, None, keep)
-            row["mae_on" if guard else "mae_off"] = m["mae"]
-            row["p90_on" if guard else "p90_off"] = m["p90_err"]
-        pts.append(row)
-    prog("done", 100, "Done")
-    return {"schema": SCHEMA + "/sweep", "points": pts, "seed": seed, "budget": opt.get("budget", "quick")}
 
 
 # ---------------------------------------------------------------- explain a prediction
@@ -533,7 +513,8 @@ def explain(k, off_key, on_key, cs, base, split):
                     "contrib_off": [float(v) for v in c_off[0]], "contrib_on": [float(v) for v in c_on[0]],
                     "base_off": float(b_off[0]), "base_on": float(b_on[0]),
                     "p50_off": float(off["p50"][j]), "p50_on": float(on["p50"][i]), "p80_off": float(off["p80"][j]),
-                    "p80_on": float(on["p80"][i]), "reasons": {n_: bool(r[q]) for q, n_ in enumerate(reason_names)},
+                    "p80_on": float(on["p80"][i]), "hist_age_days": _num(te.hist_age_days.to_numpy()[i]),
+                    "gps_age_min": _num(te.gps_age_min.to_numpy()[i]), "reasons": {n_: bool(r[q]) for q, n_ in enumerate(reason_names)},
                     "decision": "defer" if defer[i] else "approve"})
     return out
 

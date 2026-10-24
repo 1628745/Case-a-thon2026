@@ -1,9 +1,9 @@
 /* Lab worker: runs the Shelf-Life Guard pipeline (docs/py/guardlab, a copy of src/) in Pyodide.
    Nothing leaves the browser: the file arrives as an ArrayBuffer and is written to Pyodide's
    in-memory filesystem. Messages in:  {type: "load"} | {type: "audit", file, name, year} |
-   {type: "run", options} | {type: "sweep", options} | {type: "cancel"}.
+   {type: "run", options} | {type: "cancel"}.
    Messages out: {type: "progress", step, pct, msg} | {type: "ready", versions} |
-   {type: "audit_result", audit} | {type: "result", result} | {type: "sweep_result", result} |
+   {type: "audit_result", audit} | {type: "result", result} |
    {type: "error", msg, detail, kind}. Cancel = the page terminates this worker. */
 "use strict";
 var PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.29.4/full/";
@@ -112,21 +112,10 @@ async function run(m) {
   post({ type: "result", result: r });
 }
 
-async function sweep(m) {
-  await load();
-  var t = performance.now();
-  setOptions(m.options);
-  call("globals().__setitem__('OPT', json.loads(OPT_JSON)) or True");
-  call("globals().__setitem__('PREP', lab.prepare(RAW, CFG, int(OPT.get('year', YEAR)), OPT.get('budget', 'quick'), 0.2)) or True");
-  var r = JSON.parse(call("lab.to_json(lab.run_sweep(*PREP, OPT, progress=_PROGRESS))"));
-  r.seconds = (performance.now() - t) / 1000;
-  post({ type: "sweep_result", result: r });
-}
-
 self.onmessage = function (ev) {
   var m = ev.data || {};
   var job = m.type === "load" ? load() : m.type === "audit" ? audit(m) : m.type === "run" ? run(m) :
-    m.type === "sweep" ? sweep(m) : m.type === "cancel" ? Promise.resolve(self.close()) : Promise.resolve();
+    m.type === "cancel" ? Promise.resolve(self.close()) : Promise.resolve();
   job.catch(function (e) {
     var kind = e.kind || (py ? "python" : "load");
     post({ type: "error", kind: kind, msg: kind === "load" ? "Python could not load in this browser (" + (e.message || e) + ")." : (e.message || String(e)), detail: e.detail || (e.stack || "") });

@@ -91,6 +91,7 @@
     <button type="button" role="radio" class="preset" data-preset="sloppy" aria-checked="true" style="--c: var(--lq)"><b>Sloppy couriers 20%</b><span>A fifth of couriers increasingly mark packages delivered in one end-of-shift batch, and some records get uploaded twice.</span></button>
     <button type="button" role="radio" class="preset" data-preset="stale" aria-checked="false" style="--c: var(--stale)"><b>Stale feature store</b><span>History features stop refreshing at the start of training, and old weeks count as much as recent ones.</span></button>
     <button type="button" role="radio" class="preset" data-preset="sloppy_stale" aria-checked="false" style="--c: var(--comb)"><b>Sloppy + stale</b><span>Both at once.</span></button>
+    <button type="button" role="radio" class="preset" data-preset="unseen" aria-checked="false" style="--c: var(--unseen)"><b>Unseen: early scans 15%</b><span>A defect the Guard was not designed for: 15% of couriers scan "delivered" at 40-70% of the real time.</span></button>
   </div>
   <p class="note" id="poison-summary"></p>
 </section>
@@ -118,60 +119,36 @@
   <div id="results" hidden>
     <div class="banner" id="banner" role="status"></div>
     <div class="kpis" id="kpis"></div>
-    <div class="res-grid">
-      <figure class="chart-fig">
-        <h3>Error per run</h3>
-        <div class="chart" id="ch-mae" data-h="260"></div>
-        <figcaption>Mean absolute error (MAE) and 90th-percentile error of the median prediction on the test week, in minutes. Lower is better.</figcaption>
-      </figure>
-      <div>
-        <h3>What the Guard did</h3>
-        <div class="gauges" id="guard-act"></div>
-      </div>
-    </div>
+
+    <figure class="chart-fig mae-fig">
+      <h3>Error per run</h3>
+      <div class="chart" id="ch-mae" data-h="260"></div>
+      <figcaption>Mean absolute error (MAE) and 90th-percentile error of the median prediction on the test week, in minutes. Lower is better.</figcaption>
+    </figure>
+    <p class="guardline" id="guard-act"></p>
 
     <div class="block-lab" id="det-block">
       <h3>Detector scorecard</h3>
       <p class="note">Positive = a training record the poison dial changed or created. The injector's labels are used only here, to score the Guard; the Guard never sees them.</p>
       <div class="det" id="det"></div>
+      <p class="trustline" id="trust"></p>
     </div>
 
-    <div class="block-lab">
-      <h3>Courier reputation</h3>
-      <div class="res-grid">
-        <figure class="chart-fig">
-          <div class="chart" id="ch-rep" data-h="210"></div>
-          <figcaption id="rep-cap">How many couriers end up at each reputation (1 = fully trusted). Below 0.5 their records count much less.</figcaption>
-        </figure>
+    <div class="block-lab review" id="review">
+      <h3>Dispatcher review</h3>
+      <div class="review-grid">
         <div>
-          <div class="tablewrap"><table class="t" id="rep-table"><thead><tr><th class="l">Courier (hashed)</th><th>Records</th><th>Flag rate</th><th>Disagreement z</th><th>Reputation</th><th class="l" id="rep-truth-h">Actually sloppy?</th><th>Release</th></tr></thead><tbody></tbody></table></div>
-          <div class="act human">
-            <button class="btn" type="button" id="rerun" disabled>Rerun with my overrides</button>
-            <span class="note" id="release-note">Human in the loop: a dispatcher who knows a courier is fine can release them. Their reputation becomes 1; their L1 flags still apply.</span>
-          </div>
-          <p class="note" id="rerun-diff" role="status"></p>
+          <div class="effort" id="effort"></div>
+          <p class="note" id="defer-why"></p>
+          <p class="note">Dispatcher time is an assumption: 45 seconds to look at each deferred package.</p>
         </div>
+        <div class="pkgcard" id="pkgcard"></div>
       </div>
-    </div>
-
-    <div class="block-lab">
-      <h3>Explain a prediction</h3>
-      <p class="note">Exact feature contributions (LightGBM <code>pred_contrib</code>, TreeSHAP) of the median model for one test package, Guard off vs Guard on, plus the Guard's serve-time check.</p>
-      <label class="ex-label">Package <select id="ex-pick"></select></label>
-      <div class="explain-grid" id="explain"></div>
-    </div>
-
-    <div class="block-lab">
-      <h3>Compute vs human effort</h3>
-      <div class="effort" id="effort"></div>
-      <p class="note">Dispatcher time is an assumption: 45 seconds to look at each deferred package.</p>
-    </div>
-
-    <div class="block-lab" id="sweep-block">
-      <h3>Sweep the dial</h3>
-      <p class="note">Rerun sloppy couriers at 0, 20, 40 and 60% (Quick budget, same seed) to see the dose-response on your data, as in the study.</p>
-      <div class="act"><button class="btn" type="button" id="sweep">Sweep the dial</button><span class="note" id="sweep-status" role="status"></span></div>
-      <div class="chart" id="ch-sweep" data-h="240"></div>
+      <div class="act human">
+        <button class="btn" type="button" id="restore" disabled>Restore trust for the flagged couriers and rerun</button>
+        <span class="note" id="restore-note">A dispatcher overrides the Guard: every courier below 0.5 gets full trust back (their L1 flags still apply).</span>
+      </div>
+      <p class="note" id="rerun-diff" role="status"></p>
     </div>
 
     <div class="block-lab">
@@ -184,7 +161,7 @@
       </div>
     </div>
 
-    <details class="tech" open>
+    <details class="tech" id="facts-box">
       <summary>Run facts</summary>
       <dl class="facts tight" id="facts"></dl>
     </details>

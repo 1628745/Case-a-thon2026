@@ -176,12 +176,16 @@ def results_ok(page, tag, injected):
     check(f"{tag}: banner", page.locator("#banner").inner_text().strip() != "", page.locator("#banner").inner_text()[:90])
     bars = page.locator("#ch-mae svg rect").count()
     check(f"{tag}: MAE chart renders", bars >= (6 if injected else 4), bars)
-    check(f"{tag}: reputation chart + table", page.locator("#ch-rep svg rect").count() > 3 and page.locator("#rep-table tbody tr").count() >= 1)
-    check(f"{tag}: guard activity", page.locator("#guard-act .gauge").count() == 5)
+    check(f"{tag}: guard activity in one line", page.locator("#guard-act span").count() == 3 and "effective training size" in page.locator("#guard-act").inner_text())
+    trust = page.locator("#trust").inner_text()
+    check(f"{tag}: courier trust sentence", trust.startswith("Courier trust:") and "below 0.5" in trust, trust[:100])
+    check(f"{tag}: no reputation table, explain or sweep", page.locator("#rep-table, #ch-rep, #ex-pick, #wf-off, #sweep, #ch-sweep").count() == 0)
     det = page.locator("#det").inner_text()
     check(f"{tag}: detector scorecard", ("Precision" in det) if injected else ("Nothing was injected" in det), det[:80])
-    check(f"{tag}: explain waterfalls", page.locator("#wf-off svg rect").count() >= 8 and page.locator("#wf-on svg rect").count() >= 8)
-    check(f"{tag}: run facts", "Seed" in page.locator("#facts").inner_text())
+    rv = page.locator("#review").inner_text()
+    check(f"{tag}: dispatcher review panel", "Dispatcher time (assumed)" in rv and "ms per package" in rv and "45 s" in rv
+          and page.locator("#pkgcard .verdict").count() == 1 and "Promise without the Guard" in rv and "GPS fix age" in rv, rv[:80])
+    check(f"{tag}: run facts collapsed", "Seed" in page.locator("#facts").text_content() and page.get_attribute("#facts-box", "open") is None)
 
 
 def downloads_ok(page, tag):
@@ -244,36 +248,24 @@ def lab_check(ctx, p):
     no_overflow(page, "synthetic 1440")
     shots(page, "lab_1440_synthetic")
 
-    # P2: explain picker, human release, effort
-    n_ex = page.locator("#ex-pick option").count()
-    for i in range(n_ex):
-        page.select_option("#ex-pick", str(i))
-        page.wait_for_timeout(100)
-    check("P2 explain: every example renders", n_ex >= 4 and page.locator("#wf-on svg rect").count() >= 8 and
-          page.locator(".l3card .verdict").count() == 1, f"{n_ex} examples")
-    check("P2 effort: compute vs human", "ms per package" in page.locator("#effort").inner_text() and "45 s" in page.locator("#effort").inner_text())
-    first = page.locator("#rep-table [data-release]").first
-    h = first.get_attribute("data-release")
-    first.check()
+    # human override: restore trust for every courier below 0.5, rerun with the same settings
+    n_low = page.evaluate("window.__lab.result.reputation.below_half.length")
     t = time.time()
-    page.click("#rerun")
+    page.click("#restore")
     r2 = wait_result(page, None)
-    REPORT["timings"]["synthetic_release_rerun_s"] = time.time() - t
-    check("P2 release: rerun applies the override", r2["released"] == [h] and page.locator("#rerun-diff").inner_text().startswith("With 1 courier"),
-          page.locator("#rerun-diff").inner_text())
-    rel_row = page.locator(f'#rep-table [data-release="{h}"]')
-    check("P2 release: released courier shows reputation 1 or leaves the lowest 10",
-          rel_row.count() == 0 or rel_row.locator("xpath=../..").locator("td").nth(4).inner_text() == "1.00")
+    REPORT["timings"]["synthetic_restore_rerun_s"] = time.time() - t
+    diff = page.locator("#rerun-diff").inner_text()
+    check("override: restore trust reruns with all flagged couriers released", n_low > 0 and len(r2["released"]) == n_low
+          and diff.startswith(f"Trust restored for {n_low} courier") and "Guard-on MAE" in diff, diff)
 
-    # P3: sweep
+    # the Guard's honest failure case
+    page.click('[data-preset="unseen"]')
     t = time.time()
-    page.click("#sweep")
-    page.wait_for_function("window.__lab.sweep && !window.__lab.running", timeout=600_000)
-    REPORT["timings"]["synthetic_sweep_s"] = time.time() - t
-    pts = page.evaluate("window.__lab.sweep.result.points")
-    check("P3 sweep: 4 doses drawn", len(pts) == 4 and page.locator("#ch-sweep svg circle").count() == 8,
-          [(x["share"], round(x["mae_off"], 1), round(x["mae_on"], 1)) for x in pts])
-    REPORT["sweep_synthetic"] = pts
+    page.click("#run")
+    r = wait_result(page, None)
+    REPORT["timings"]["synthetic_unseen"] = {"click_to_result_s": time.time() - t, **r["t"]}
+    check("Unseen preset: runs and is reported", [k for k, _ in r["runs"]] == ["reference", "degraded_off", "degraded_on"]
+          and "early-scan couriers" in page.locator("#trust").inner_text(), r["h"]["sentence"])
 
     # synthetic, clean
     page.click('[data-preset="clean"]')

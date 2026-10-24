@@ -87,11 +87,11 @@
    "eff_n": 30978.0,
    "frac_downweighted": 0.0,
    "n_test": 9515,
-   "train_s": 0.4385319580032956,
-   "predict_ms_per_pkg": 0.010120787390953599,
+   "train_s": 0.4352396660251543,
+   "predict_ms_per_pkg": 0.01025160714820971,
    "feature_age_days": 1.0,
    "label": "Reference (as uploaded, Guard off)",
-   "run_s": 0.6051034580159467
+   "run_s": 0.5986882500001229
   },
   {
    "key": "degraded_off",
@@ -108,11 +108,11 @@
    "eff_n": 33674.0,
    "frac_downweighted": 0.0,
    "n_test": 9515,
-   "train_s": 0.4450444170215633,
-   "predict_ms_per_pkg": 0.009612125590251767,
+   "train_s": 0.4490562080172822,
+   "predict_ms_per_pkg": 0.00918480914249562,
    "feature_age_days": 1.0,
    "label": "Poisoned, Guard off",
-   "run_s": 0.6042357090045698
+   "run_s": 0.6165426669758745
   },
   {
    "key": "degraded_on",
@@ -129,11 +129,11 @@
    "eff_n": 17481.34107057458,
    "frac_downweighted": 0.8599512977371265,
    "n_test": 9515,
-   "train_s": 1.2666604580008425,
-   "predict_ms_per_pkg": 0.01036696878902485,
+   "train_s": 1.2298824999888893,
+   "predict_ms_per_pkg": 0.010858258857434352,
    "feature_age_days": 1.0,
    "label": "Poisoned, Guard on",
-   "run_s": 1.5996490419784095
+   "run_s": 1.552661125024315
   }
  ],
  "headline": {
@@ -221,7 +221,7 @@
   "n_couriers": 138,
   "lowest": [
    {
-    "courier": "6e72e654",
+    "courier": "19e2115c",
     "n": 311,
     "flag_rate": 0.932475884244373,
     "z": -0.8901937127791919,
@@ -231,7 +231,7 @@
     "released": false
    },
    {
-    "courier": "fb1dcda1",
+    "courier": "e99a2473",
     "n": 180,
     "flag_rate": 0.9,
     "z": 1.2466379903239415,
@@ -241,7 +241,7 @@
     "released": false
    },
    {
-    "courier": "aed4e5ed",
+    "courier": "330eecdf",
     "n": 581,
     "flag_rate": 0.6695352839931153,
     "z": -1.4000013718257625,
@@ -251,7 +251,7 @@
     "released": false
    },
    {
-    "courier": "12dabb54",
+    "courier": "e32a271a",
     "n": 1531,
     "flag_rate": 0.6492488569562378,
     "z": 1.3604822700627497,
@@ -261,7 +261,7 @@
     "released": false
    },
    {
-    "courier": "8f83b0f7",
+    "courier": "a5a85803",
     "n": 1040,
     "flag_rate": 0.635576923076923,
     "z": -1.3491457140754017,
@@ -271,7 +271,7 @@
     "released": false
    },
    {
-    "courier": "be8d604c",
+    "courier": "5e5b630d",
     "n": 787,
     "flag_rate": 0.662007623888183,
     "z": -1.172270345441193,
@@ -281,7 +281,7 @@
     "released": false
    },
    {
-    "courier": "24eb37ac",
+    "courier": "00b3852a",
     "n": 911,
     "flag_rate": 0.6597145993413831,
     "z": -0.20556598084907143,
@@ -291,7 +291,7 @@
     "released": false
    },
    {
-    "courier": "51845553",
+    "courier": "750b465f",
     "n": 516,
     "flag_rate": 0.6744186046511628,
     "z": -0.8032795211606377,
@@ -301,7 +301,7 @@
     "released": false
    },
    {
-    "courier": "538ed8af",
+    "courier": "d1ae690d",
     "n": 955,
     "flag_rate": 0.6554973821989529,
     "z": -0.7671379566208506,
@@ -311,7 +311,7 @@
     "released": false
    },
    {
-    "courier": "86e14fa2",
+    "courier": "5e007f9a",
     "n": 479,
     "flag_rate": 0.6722338204592901,
     "z": 0.394885703441582,
@@ -323,7 +323,36 @@
   ],
   "n_sloppy": 40,
   "n_early": 0,
-  "sloppy_caught": 19
+  "n_below_half": 25,
+  "below_half": [
+   "7a2479fa",
+   "57cd045f",
+   "725fdae8",
+   "a5a85803",
+   "311266a8",
+   "00b3852a",
+   "a3c561fd",
+   "c8d49776",
+   "5e007f9a",
+   "15cb1760",
+   "1c686b38",
+   "d1ae690d",
+   "7bf803fc",
+   "750b465f",
+   "e99a2473",
+   "19e2115c",
+   "e32a271a",
+   "efb00f36",
+   "c26b282f",
+   "3d409b97",
+   "330eecdf",
+   "0a5cd93c",
+   "5e5b630d",
+   "468372a6",
+   "4a37a5ae"
+  ],
+  "sloppy_caught": 19,
+  "early_caught": null
  },
  "injection": {
   "bulk_scan": 4885,
@@ -430,6 +459,8 @@
    "p50_on": 278.55181553762293,
    "p80_off": 650.2882199337506,
    "p80_on": 389.8579070042618,
+   "hist_age_days": 1.0,
+   "gps_age_min": 0.0,
    "reasons": {
     "hist": false,
     "gps": false,
@@ -538,6 +569,8 @@
    "p50_on": 376.3355644588435,
    "p80_off": 2225.0443000075684,
    "p80_on": 1014.2965949929301,
+   "hist_age_days": 1.0,
+   "gps_age_min": 0.0,
    "reasons": {
     "hist": false,
     "gps": false,
@@ -646,6 +679,8 @@
    "p50_on": 747.2986196676202,
    "p80_off": 874.6083447306979,
    "p80_on": 1998.2154292033958,
+   "hist_age_days": 1.0,
+   "gps_age_min": 0.0,
    "reasons": {
     "hist": false,
     "gps": false,
@@ -754,6 +789,8 @@
    "p50_on": 298.90801073370216,
    "p80_off": 420.5673021562492,
    "p80_on": 471.23028257254646,
+   "hist_age_days": 1.0,
+   "gps_age_min": 0.0,
    "reasons": {
     "hist": false,
     "gps": false,
@@ -862,6 +899,8 @@
    "p50_on": 526.1289993950245,
    "p80_off": 645.4490165031613,
    "p80_on": 636.7194789436527,
+   "hist_age_days": 1.0,
+   "gps_age_min": 0.0,
    "reasons": {
     "hist": false,
     "gps": false,
@@ -875,8 +914,8 @@
   "deferred": 468,
   "sec_per_pkg_assumed": 45,
   "dispatcher_min": 351.0,
-  "train_s_guard": 1.2666604580008425,
-  "predict_ms_per_pkg": 0.01036696878902485,
+  "train_s_guard": 1.2298824999888893,
+  "predict_ms_per_pkg": 0.010858258857434352,
   "n_test": 9515
  },
  "versions": {
@@ -897,12 +936,12 @@
   "n": 6011
  },
  "timings": {
-  "inject_s": 0.08578641599160619,
-  "score_s": 0.10073937498964369,
-  "total_s": 2.996808791998774,
-  "audit_s": 0.3479405000107363,
-  "prepare_s": 0.21928604098502547,
-  "end_to_end_s": 3.5667167080100626
+  "inject_s": 0.08252512500621378,
+  "score_s": 0.10066804199595936,
+  "total_s": 2.952414790983312,
+  "audit_s": 0.3357527089829091,
+  "prepare_s": 0.21472558300592937,
+  "end_to_end_s": 3.505565542000113
  },
  "config": {
   "config_hash": "e54a0bf568c4",
