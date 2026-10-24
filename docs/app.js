@@ -476,6 +476,13 @@
     });
   }
 
+  function initStamps() {
+    if (RM) return;
+    document.querySelectorAll(".stamp, .st-end").forEach(function (el) {
+      el.classList.add("wait");
+      onView(el, function () { setTimeout(function () { el.classList.remove("wait"); }, 250); }, "0px 0px -20% 0px");
+    });
+  }
   function initDeco() {
     document.querySelectorAll(".deco").forEach(function (d) {
       if (RM) return;
@@ -813,7 +820,7 @@
       if (id !== "top") { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
     });
   }
-  initNav(); initKeys(); initRoads(); initDeco();
+  initNav(); initKeys(); initRoads(); initDeco(); initStamps();
   // results.json (a copy of results/results.json) is the source of every result; summary.json only adds the build time
   Promise.all(["results", "timeline", "mechanism", "console", "manifest", "modlog", "text", "summary"].map(function (n) {
     return getJSON("data/" + n + ".json").catch(function (e) { if (n === "text" || n === "summary") return {}; throw e; });

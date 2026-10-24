@@ -517,3 +517,40 @@ section#built > .roles { margin-top: 22px; }
 .old-list li { margin-bottom: 8px; }
 .sec-h { margin-top: 26px; }
 @media (max-width: 640px) { .sticker { width: 150px; height: 150px; } .st-text b { font-size: 40px; } .st-text span { font-size: 12px; } .st-text { padding: 0 26px; } }
+
+/* packing tape on the part labels */
+.part-n { display: inline-block; position: relative; color: #1B2B3A; font-weight: 800; padding: 4px 22px 3px; transform: rotate(-2deg); margin-bottom: 12px;
+  background: repeating-linear-gradient(-45deg, rgba(255,255,255,.12) 0 6px, transparent 6px 12px), var(--tote);
+  clip-path: polygon(0 8%, 4% 0, 8% 10%, 12% 2%, 88% 2%, 92% 9%, 96% 0, 100% 10%, 100% 90%, 96% 100%, 92% 91%, 88% 99%, 12% 98%, 8% 90%, 4% 100%, 0 92%, 2% 50%);
+  box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+
+/* rubber stamps */
+.stamp { display: inline-grid; justify-items: center; color: var(--lq); border: 3px solid currentColor; border-radius: 8px; padding: 4px 14px 5px;
+  box-shadow: inset 0 0 0 2px var(--floor), inset 0 0 0 4px currentColor; transform: rotate(-8deg); opacity: .9; line-height: 1; }
+.stamp b { font-family: var(--display); font-weight: 800; font-size: 26px; text-transform: uppercase; letter-spacing: .08em; }
+.stamp small { font-size: 11px; font-weight: 700; margin-top: 2px; }
+.counters.has-stamp { position: relative; }
+.stamp-corner { position: absolute; right: 0; top: -58px; transform: rotate(7deg); color: var(--tote-ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .stamp.wait { opacity: 0; transform: rotate(-8deg) scale(1.9); }
+  .stamp-corner.wait { transform: rotate(7deg) scale(1.9); }
+  .stamp { transition: transform .28s cubic-bezier(.5, 0, .7, 1.4), opacity .2s ease; }
+}
+
+/* end-of-page delivered sticker */
+.street-end { position: relative; }
+.st-end { position: absolute; right: 48px; top: -150px; width: 150px; height: 150px; transform: rotate(-9deg); }
+.st-end .st-burst { fill: var(--pass); }
+.st-end .st-text b { font-size: 30px; }
+.st-end .st-text span { font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .st-end { animation: none; transition: transform .5s cubic-bezier(.2, 1.5, .4, 1), opacity .3s ease; }
+  .st-end.wait { opacity: 0; transform: rotate(-30deg) scale(.3); }
+}
+@media (max-width: 640px) {
+  .stamp-corner { top: -50px; }
+  .stamp b { font-size: 20px; }
+  .st-end { width: 110px; height: 110px; top: -104px; right: 12px; }
+  .st-end .st-text b { font-size: 22px; }
+  .st-end .st-text span { font-size: 10px; }
+}
