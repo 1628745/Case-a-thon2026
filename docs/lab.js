@@ -528,6 +528,9 @@
     show("newcity", true);
   }).catch(function () { /* card is optional */ });
 
+  // ------------------------------------------------------------ fallback video: pause it when the dropdown closes
+  $("demo-video").addEventListener("toggle", function () { if (!this.open) this.querySelector("video").pause(); });
+
   // ------------------------------------------------------------ start
   updateButtons();
   newWorker(); // preload Python as soon as the page opens

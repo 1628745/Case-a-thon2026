@@ -230,6 +230,18 @@ def lab_check(ctx, p):
     page.wait_for_function("window.__lab && window.__lab.ready", timeout=180_000)
     REPORT["timings"]["page_python_ready_s"] = time.time() - t
     check("lab: Python loads", True, f"{time.time() - t:.1f} s")
+    dv = page.locator("#demo-video")
+    closed = dv.get_attribute("open") is None and not page.locator("#demo-video video").is_visible()
+    page.click("#demo-video summary")
+    vid = page.evaluate("""async () => { const v = document.querySelector('#demo-video video'); v.muted = true;
+      try { await v.play(); } catch (e) { return {err: String(e)}; }
+      await new Promise(r => setTimeout(r, 1500));
+      const out = {t: v.currentTime, w: v.videoWidth, dur: v.duration}; v.pause(); return out; }""")
+    check("fallback video: dropdown under the Python bar opens and plays", closed and page.locator("#demo-video video").is_visible()
+          and dv.locator("summary").inner_text() == "Demo not working? Watch this video of a live run instead."
+          and vid.get("t", 0) > 0.3 and vid.get("w") == 3456, vid)
+    page.click("#demo-video summary")
+    check("fallback video: closing pauses it", page.evaluate("document.querySelector('#demo-video video').paused"))
     check("P3 new-city card", "% recovered" in page.locator("#newcity").inner_text(), page.locator("#newcity").inner_text()[:100])
     page.evaluate("window.__labPrev = null")
 

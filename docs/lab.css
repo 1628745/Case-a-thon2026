@@ -20,6 +20,8 @@ body.lab main { max-width: 1240px; }
 .pill.bad { border-color: var(--fail); color: var(--fail); }
 .bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
 .bar.thin { height: 5px; max-width: 420px; }
+.demo-video { margin-top: 14px; max-width: 900px; }
+.demo-video video { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
 .bar i { display: block; height: 100%; width: 0; background: var(--tote); border-radius: inherit; }
 @media (prefers-reduced-motion: no-preference) { .bar i { transition: width .3s ease; } }
 

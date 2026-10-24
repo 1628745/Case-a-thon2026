@@ -167,3 +167,7 @@ Not fixed:
 - **Condensed and collapsed:** "What the Guard did" is one line of three numbers, and Run facts is a collapsed `<details>`.
 - **Unseen preset restored** (a teammate had removed it) so the Guard's failure case can be shown live. On the synthetic sample it recovers only 4%.
 - The Python explain block (contributions etc.) is still computed and still lands in `lab_report.json`; only its UI is gone. The cached Yantai JSON was regenerated with the new fields.
+
+## After DONE: fallback demo video (user request, 2026-10-24)
+- The user's `Case-a-thon Demo Video.mov` (40 s screen recording of the lab on the synthetic sample; frames checked: page and aggregate results only, no LaDe rows) is repackaged without re-encoding as `docs/media/demo-run.mp4` (H.264 copied from the `.mov` into an MP4 with faststart, 17.8 MB), because only Safari plays `.mov` reliably. `demo-run-poster.jpg` is frame 1 s at 1280 px.
+- It sits in a `<details>` right under the Python loading bar with `preload="none"`, so visitors download it only when they open it. Closing the dropdown pauses it. The original `.mov` in the repo root is left untracked (not committed; it would duplicate the MP4).
