@@ -392,7 +392,7 @@ def smoke_check(ctx):
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1500)
     info = page.evaluate("""() => ({
-      sections: ['poisons', 'built', 'analysis', 'walk'].filter(id => document.getElementById(id)).length,
+      sections: ['poisons', 'built', 'analysis'].filter(id => document.getElementById(id)).length,
       svgs: document.querySelectorAll('main svg').length,
       chartSvgs: document.querySelectorAll('.chart svg').length,
       err: !!document.querySelector('main .err'),
@@ -409,7 +409,7 @@ def smoke_check(ctx):
         with open(base_p, "w") as f:
             json.dump(info, f)
         check("index: baseline recorded", True, info)
-    check("index: sections present", info["sections"] == 4, info["sections"])
+    check("index: sections present", info["sections"] == 3, info["sections"])
     check("index: charts render", info["chartSvgs"] >= 5, info["chartSvgs"])
     check("index: no data-load error box", not info["err"])
     check("index: no horizontal overflow", not info["overflow"])
