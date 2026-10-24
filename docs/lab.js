@@ -32,16 +32,6 @@
     $(id).innerHTML = msg ? '<div class="err">' + esc(msg) + (detail ? '<details><summary>Details</summary><pre class="note">' + esc(detail) + "</pre></details>" : "") + "</div>" : "";
   }
 
-  // ------------------------------------------------------------ theme
-  $("theme").addEventListener("click", function () {
-    var cur = document.documentElement.getAttribute("data-theme");
-    var dark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var next = dark ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem("theme", next); } catch (e) { /* storage blocked */ }
-    rerenderCharts();
-  });
-
   // ------------------------------------------------------------ worker
   function newWorker() {
     S.ready = false; S.hasFile = false;

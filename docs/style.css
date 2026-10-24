@@ -1,36 +1,23 @@
 /* Data Shelf-Life Guard. Palette: sorting-floor grey, depot slate, route blue, bruise plum, lichen olive, tote yellow. */
 :root {
-  --floor: #E7ECEE;
-  --panel: #F4F7F8;
-  --ink: #1B2B3A;
-  --muted: #4E5F6E;
-  --line: #C9D3D9;
-  --ref: #2A5CA6;
-  --stale: #66782A;
-  --lq: #9A3C6A;
-  --comb: #5B3A8C;
-  --unseen: #1C7A72;
+  /* dark only */
+  --floor: #14202A;
+  --panel: #1B2935;
+  --ink: #E3EAEE;
+  --muted: #A3B2BE;
+  --line: #33475A;
+  --ref: #82AAEA;
+  --stale: #B7C66C;
+  --lq: #E48CB7;
+  --comb: #B39BE6;
+  --unseen: #6CCBBF;
   --tote: #F2BA00;
-  --tote-ink: #7A5E00;
-  --pass: #2E6B3A;
-  --fail: #A2302A;
-  --band: rgba(27, 43, 58, .07);
+  --tote-ink: #F5C842;
+  --pass: #7ACB8A;
+  --fail: #F08A80;
+  --band: rgba(227, 234, 238, .07);
   --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
   --body: "Overpass", "Segoe UI", system-ui, sans-serif;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --floor: #14202A; --panel: #1B2935; --ink: #E3EAEE; --muted: #A3B2BE; --line: #33475A;
-    --ref: #82AAEA; --stale: #B7C66C; --lq: #E48CB7; --comb: #B39BE6; --unseen: #6CCBBF;
-    --tote: #F2BA00; --tote-ink: #F5C842; --pass: #7ACB8A; --fail: #F08A80; --band: rgba(227, 234, 238, .07);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --floor: #14202A; --panel: #1B2935; --ink: #E3EAEE; --muted: #A3B2BE; --line: #33475A;
-  --ref: #82AAEA; --stale: #B7C66C; --lq: #E48CB7; --comb: #B39BE6; --unseen: #6CCBBF;
-  --tote: #F2BA00; --tote-ink: #F5C842; --pass: #7ACB8A; --fail: #F08A80; --band: rgba(227, 234, 238, .07);
   color-scheme: dark;
 }
 
@@ -507,3 +494,25 @@ section#built > .roles { margin-top: 22px; }
 
 /* "Try it" link to the lab page (added in phase 2) */
 .tryit { text-decoration: none; font-weight: 700; white-space: nowrap; border-color: var(--tote); }
+
+/* hero stickers */
+.stickers { display: flex; gap: 18px; margin: 6px 0 22px; flex-wrap: wrap; }
+.sticker { position: relative; width: 168px; height: 168px; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .35)); }
+.sticker svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.st-a { transform: rotate(-7deg); }
+.st-b { transform: rotate(6deg); }
+.st-a .st-burst { fill: var(--tote); }
+.st-b .st-burst { fill: var(--lq); }
+.st-ring { fill: none; stroke: #1B2B3A; stroke-opacity: .35; stroke-width: 2.5; stroke-dasharray: 5 5; }
+.st-text { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: #1B2B3A; padding: 0 30px; }
+.st-text b { font-family: var(--display); font-weight: 800; font-size: 45px; line-height: .95; }
+.st-text span { font-weight: 800; font-size: 13px; line-height: 1.15; margin-top: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .sticker { animation: st-in .6s cubic-bezier(.2, 1.5, .4, 1) both; }
+  .stickers > div:nth-child(2) .sticker { animation-delay: .15s; }
+}
+@keyframes st-in { from { opacity: 0; scale: .4; } to { opacity: 1; scale: 1; } }
+.old-list { font-size: 19px; max-width: 72ch; padding-left: 22px; margin: 6px 0 0; }
+.old-list li { margin-bottom: 8px; }
+.sec-h { margin-top: 26px; }
+@media (max-width: 640px) { .sticker { width: 140px; height: 140px; } .st-text b { font-size: 40px; } }
