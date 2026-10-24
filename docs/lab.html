@@ -97,23 +97,6 @@
     <button type="button" role="radio" class="preset" data-preset="sloppy_stale" aria-checked="false" style="--c: var(--comb)"><b>Sloppy + stale</b><span>Both at once.</span></button>
     <button type="button" role="radio" class="preset" data-preset="unseen" aria-checked="false" style="--c: var(--unseen)"><b>Unseen: early scans 15%</b><span>A defect the Guard was not designed for: 15% of couriers scan "delivered" at 40-70% of the real time.</span></button>
   </div>
-  <details class="tech" id="advanced">
-    <summary>Advanced</summary>
-    <div class="tech-body adv">
-      <label class="inline grow">Sloppy-courier share <input type="range" id="share" min="0" max="60" step="5" value="20"> <output id="share-v">20%</output></label>
-      <fieldset class="mechs"><legend>Mechanisms</legend>
-        <label><input type="checkbox" data-mech="bulk" checked> End-of-shift bulk scans</label>
-        <label><input type="checkbox" data-mech="dup" checked> Duplicate re-uploads</label>
-        <label><input type="checkbox" data-mech="stale"> Frozen history features + all-weeks window</label>
-        <label><input type="checkbox" data-mech="early"> Early "delivered" scans</label>
-      </fieldset>
-      <label class="inline">Seed <input type="number" id="seed" value="0" min="0" max="9999" step="1"></label>
-      <span class="inline">Model budget
-        <span class="seg" role="group" aria-label="Model budget"><button type="button" data-budget="quick" aria-pressed="true">Quick</button><button type="button" data-budget="full" aria-pressed="false">Full</button></span>
-      </span>
-      <p class="note" id="budget-note">Quick: 150 trees, 31 leaves, at most 120,000 training rows (whole couriers, seeded). Full: the study's 300 trees and 63 leaves, no cap; it can take several minutes.</p>
-    </div>
-  </details>
   <p class="note" id="poison-summary"></p>
 </section>
 

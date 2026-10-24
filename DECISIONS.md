@@ -155,3 +155,6 @@ The review subagent found no high-severity issues, 2 medium and 4 low. Fixed:
 
 Not fixed:
 - **(low)** `file_line = src_row + 2` assumes one header line and no blank lines (pandas skips blank lines). LaDe files have none; this is documented here.
+
+## After DONE: Advanced panel removed (user request, 2026-10-24)
+- The "Advanced" panel under Poison it (sloppy-share slider, per-mechanism checkboxes, seed, Quick/Full budget) is gone. Each preset now fixes its defects; sloppy share is 20%, seed 0 and the budget Quick, all the previous defaults. The worker and `src/lab.py` still accept those options, so `scripts/lab_native.py` can still vary them.

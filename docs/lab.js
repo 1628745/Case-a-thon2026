@@ -4,7 +4,7 @@
   "use strict";
   var RM = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var PRESET_MECHS = { clean: [], sloppy: ["bulk", "dup"], stale: ["stale"], sloppy_stale: ["bulk", "dup", "stale"], unseen: ["early"] };
-  var PRESET_NAME = { clean: "Clean as uploaded", sloppy: "Sloppy couriers", stale: "Stale feature store", sloppy_stale: "Sloppy + stale", unseen: "Unseen: early scans 15%", custom: "Custom mix" };
+  var PRESET_NAME = { clean: "Clean as uploaded", sloppy: "Sloppy couriers", stale: "Stale feature store", sloppy_stale: "Sloppy + stale", unseen: "Unseen: early scans 15%" };
   var RUN_COLOR = { reference: "var(--ref)", degraded_off: "var(--lq)", degraded_on: "var(--tote)", clean_off: "var(--ref)", clean_on: "var(--tote)" };
   var RUN_SHORT = { reference: "Reference", degraded_off: "Poisoned, Guard off", degraded_on: "Poisoned, Guard on", clean_off: "Guard off", clean_on: "Guard on" };
   var FEAT = { hour: "Hour accepted", minute_of_day: "Minute of day", dow: "Weekday", region_id: "Region id", aoi_id: "Area id",
@@ -205,27 +205,11 @@
   });
   function setPreset(p) {
     S.preset = p;
-    presetBtns.forEach(function (b) { var on = b.getAttribute("data-preset") === p; b.setAttribute("aria-checked", on ? "true" : "false"); b.tabIndex = on || p === "custom" ? 0 : -1; });
-    if (p !== "custom") document.querySelectorAll("[data-mech]").forEach(function (c) { c.checked = PRESET_MECHS[p].indexOf(c.getAttribute("data-mech")) >= 0; });
-    if (p === "sloppy" || p === "sloppy_stale") { $("share").value = 20; $("share-v").textContent = "20%"; }
+    presetBtns.forEach(function (b) { var on = b.getAttribute("data-preset") === p; b.setAttribute("aria-checked", on ? "true" : "false"); b.tabIndex = on ? 0 : -1; });
   }
-  document.querySelectorAll("[data-mech]").forEach(function (c) {
-    c.addEventListener("change", function () {
-      var m = mechs(), hit = Object.keys(PRESET_MECHS).filter(function (k) { return PRESET_MECHS[k].slice().sort().join() === m.slice().sort().join(); })[0];
-      setPresetQuiet(hit || "custom");
-    });
-  });
-  function setPresetQuiet(p) { S.preset = p; presetBtns.forEach(function (b) { b.setAttribute("aria-checked", b.getAttribute("data-preset") === p ? "true" : "false"); }); }
-  $("share").addEventListener("input", function () { $("share-v").textContent = this.value + "%"; });
-  document.querySelectorAll("[data-budget]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      S.budget = b.getAttribute("data-budget");
-      document.querySelectorAll("[data-budget]").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
-    });
-  });
-  function mechs() { return Array.prototype.filter.call(document.querySelectorAll("[data-mech]"), function (c) { return c.checked; }).map(function (c) { return c.getAttribute("data-mech"); }); }
   function options(extra) {
-    return Object.assign({ preset: S.preset, mechanisms: mechs(), sloppy_share: +$("share").value / 100, seed: Math.max(0, parseInt($("seed").value, 10) || 0),
+    // fixed settings (the study's defaults): sloppy share 20%, seed 0, Quick budget
+    return Object.assign({ preset: S.preset, mechanisms: PRESET_MECHS[S.preset], sloppy_share: 0.2, seed: 0,
       budget: S.budget, year: +$("year").value, release: Object.keys(S.release), salt: S.salt }, extra || {});
   }
   setPreset("sloppy");

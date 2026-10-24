@@ -53,13 +53,6 @@ body.lab main { max-width: 1240px; }
 .preset span { color: var(--muted); }
 .preset:hover { border-color: var(--muted); border-top-color: var(--c); }
 .preset[aria-checked="true"] { border-color: var(--ink); border-top-color: var(--c); box-shadow: 0 0 0 2px var(--ink) inset; }
-.adv { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
-.adv input[type=range] { accent-color: var(--tote); }
-.adv #seed { width: 90px; }
-.mechs { border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 14px 10px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 15px; }
-.mechs legend { font-weight: 700; font-size: 14px; color: var(--muted); padding: 0 4px; }
-.mechs label { display: inline-flex; gap: 6px; align-items: center; }
-.adv .note { flex-basis: 100%; margin: 0; }
 
 .btn.big { font-size: 18px; padding: 11px 22px; }
 .btn:disabled, .ghost:disabled { opacity: .45; cursor: not-allowed; }
