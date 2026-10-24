@@ -37,7 +37,6 @@ Open **http://localhost:8000/lab.html** in Chrome. Within a few seconds the pill
 ## 3. Honesty checks (about 1 minute)
 
 - Pick **Clean as uploaded** and run. You get two runs plus a "Cost of the Guard" card (about −0.2 min on the sample), and the detector says nothing was injected.
-- Pick **Unseen: early scans 15%** and run. On Yantai the banner turns **red**: the Guard makes things slightly worse on a defect it wasn't built for. This is intentional; the results are shown as they come out.
 - Start a run and press **Cancel**. The log says "Cancelled", and Python restarts in the background (about 4 s).
 
 ## 4. Real data: Yantai (about 1 minute)

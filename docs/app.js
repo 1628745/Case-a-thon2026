@@ -98,6 +98,8 @@
     x.secsRef = V.final.cells.reference.off.secs;
     var FR = S.final.recovery;
     x.lqSaved = FR.low_quality.degraded - FR.low_quality.guarded;
+    var DTF = S.final.detector, tp = DTF.low_quality.tp + DTF.combined.tp, fn = DTF.low_quality.fn + DTF.combined.fn;
+    x.caughtPct = tp / (tp + fn); // door-check recall on bad records, final test, sloppy-scan runs pooled
     x.combSaved = FR.combined.degraded - FR.combined.guarded;
     x.frozenFeatGap = ctl.frozen_features.mae - ref4.mae;
     x.frozenModelGap = ctl.frozen_model.mae - ref4.mae;
@@ -156,16 +158,6 @@
     window.addEventListener("resize", update);
     update();
   }
-  function initTheme() {
-    $("theme").addEventListener("click", function () {
-      var cur = document.documentElement.getAttribute("data-theme");
-      var dark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-      var next = dark ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", next);
-      try { localStorage.setItem("theme", next); } catch (e) { /* storage blocked */ }
-    });
-  }
-
   // ------------------------------------------------------------ chart kit (D3)
   function base(el, opts) {
     var w = Math.max(240, el.clientWidth), h = +el.getAttribute("data-h") || 240;
@@ -450,15 +442,6 @@
       onView(el, run, "0px 0px -25% 0px");
     });
   }
-  function renderShelf() {
-    var sl = D.summary.shelf_life, order = ["1", "2", "4", "8", "16", "all"];
-    var cat = order.map(function (w) { return w === "all" ? "all" : w + " wk"; });
-    var series = ["reference", "low_quality"].map(function (c) {
-      return { name: CNAME[c], color: CVAR[c], x: cat, y: order.map(function (w) { var r = sl.filter(function (s) { return s.condition === c && s.window_weeks === w; })[0]; return r ? r.mae : null; }) };
-    });
-    lineChart($("ch-shelf"), series, { cat: cat, yLabel: "average error (min per package)", xLabel: "weeks of history the model learns from", yFmt: "f0", tipFmt: "f1", dots: true, endLabels: true, tipX: "window ", margin: { r: 90 } });
-  }
-
   function initRoads() {
     var hr = $("hero-road");
     function easeOut(p) { return 1 - Math.pow(1 - p, 3); }
@@ -651,100 +634,10 @@
     $("slip-off").innerHTML = esc(hm(a.p80)) + "<small>arrives by " + esc(clock(md, a.p80)) + "</small>";
     $("slip-on").innerHTML = esc(hm(b.p80)) + "<small>arrives by " + esc(clock(md, b.p80)) + "</small>";
     $("slip-diff").textContent = hm(a.p80 - b.p80);
-  }
-
-  var caseOpened = 0, actions = [], curModelMs = null;
-  function scenario() { return D.console.scenarios[+$("sc-pick").value || 0]; }
-  function initWalk() {
-    var C = D.console, pick = $("sc-pick");
-    var NAMES = { normal: "A normal package", stale: "Stats out of date", sloppy: "A sloppy courier", rare: "A brand-new area", golden: "Golden Week rush" };
-    fill(pick, C.scenarios.map(function (s, i) { return [i, s.id === "stale" ? "Stats " + s.meta.hist_age_days + " days out of date" : NAMES[s.id] || s.name]; }));
-    var first = 0;
-    for (var i = 0; i < C.scenarios.length; i++) if (guardOn(C.scenarios[i]).defer) { first = i; break; }
-    pick.value = first;
-    pick.addEventListener("change", renderWalk);
-    function act(kind) {
-      var sc = scenario(), b = guardOn(sc), secs = (performance.now() - caseOpened) / 1000;
-      var rec = { kind: kind, sc: $("sc-pick").options[$("sc-pick").selectedIndex].text, model: Math.round(b.p80), secs: secs, note: $("act-note").value.trim(), state: b.defer ? "flagged by the Guard" : "sent automatically" };
-      if (kind === "Changed") rec.to = +$("act-min").value;
-      actions.unshift(rec);
-      $("ef-human").textContent = secs.toFixed(1) + " s";
-      $("act-log").innerHTML = actions.map(function (r) {
-        return "<div><b>" + esc(r.kind) + "</b>: " + esc(r.sc) + " (" + r.state + "), system promise " + r.model + " min" +
-          (r.to !== undefined ? ", changed to " + r.to + " min" : "") +
-          (r.note ? ". Note: " + esc(r.note) : "") + ". Your time " + r.secs.toFixed(1) + " s.</div>";
-      }).join("");
-      $("act-note").value = "";
-      caseOpened = performance.now();
-    }
-    $("act-approve").addEventListener("click", function () { act("Approved"); });
-    $("act-correct").addEventListener("click", function () { act("Changed"); });
-    $("act-escalate").addEventListener("click", function () { act("Sent to the data team"); });
-    renderWalk();
-  }
-  function renderWalk() {
-    var sc = scenario(), C = D.console, g = C.guard, a = guardOff(sc), b = guardOn(sc), md = sc.inputs_off.minute_of_day;
-    caseOpened = performance.now();
-    $("sc-desc").textContent = sc.description;
-    $("w-promise").innerHTML =
-      "<div class='pr on'><span class='k'>With the Guard</span><span class='big'>" + esc(hm(b.p80)) + "</span><span class='s'>arrives by " + esc(clock(md, b.p80)) + " (picked up " + esc(clock(md, 0)) + ")</span></div>" +
-      "<div class='pr off'><span class='k'>Without the Guard</span><span class='mid'>" + esc(hm(a.p80)) + "</span><span class='s'>arrives by " + esc(clock(md, a.p80)) + "</span></div>";
-    promiseTimeline(a, b);
-    var reasons = b.rules.filter(function (r) { return r.fired; });
-    $("w-decision").innerHTML = b.defer
-      ? "<div class='verdict defer'>Not sent automatically. A dispatcher decides.</div>"
-      : "<div class='verdict ok'>Sent to the customer automatically.</div>";
-    var rep = sc.meta.reputation, age = sc.meta.hist_age_days;
-    var area = b.rules.filter(function (r) { return r.id === "area"; })[0], wid = b.rules.filter(function (r) { return r.id === "width"; })[0];
-    var items = [
-      { ok: !area.fired, t: area.fired ? "No recent deliveries in this area" : "The area is familiar", v: fmt(sc.meta.area_rows, "int") + " deliveries here in the last " + V.cfg.splits.window_weeks + " weeks" },
-      { ok: !wid.fired, t: wid.fired ? "The model is unusually unsure" : "The model is reasonably sure", v: "promise is " + fmt(b.width, "f0") + " min past the likely time; limit " + g.l3.defer_width_k + " × " + fmt(b.wref, "f0") + " min" },
-      { ok: rep >= 0.5, t: rep >= 0.5 ? "The courier's records are trustworthy" : "The courier's records look sloppy", v: "trust score " + fmt(rep, "f2") + " out of 1" + (rep < 0.5 ? ": counted less when the model learns" : "") },
-      { ok: rep >= 0.5, t: "Courier's average delivery time", v: fmt(sc.inputs_off.courier_hist_mean, "f0") + " min as recorded → " + fmt(sc.inputs_on.courier_hist_mean, "f0") + " min after the Guard set suspicious records aside", neutral: rep >= 0.5 }
-    ];
-    if (age > 7) items.push({ ok: true, warn: true, t: "Stats are " + age + " days old", v: "still used, because old stats stayed useful; the data team is alerted" });
-    $("w-reasons").innerHTML = items.map(function (r) {
-      var cls = r.warn ? "warn" : r.neutral ? "neutral" : r.ok ? "ok" : "no";
-      var mark = r.warn ? "!" : r.neutral ? "i" : r.ok ? "✓" : "✕";
-      return "<li class='" + cls + "'><span class='mark' aria-hidden='true'>" + mark + "</span><span><b>" + esc(r.t) + "</b><br><span class='v'>" + esc(r.v) + "</span></span></li>";
-    }).join("");
-    var raw = Object.assign({}, sc.inputs_on, { courier_hist_mean: sc.inputs_off.courier_hist_mean, area_hist_mean: sc.inputs_off.area_hist_mean, open_workload: sc.inputs_off.open_workload });
-    var wi = guardOn(sc, raw), ex;
-    if (area.fired) ex = "The model has nothing recent to go on for this area, so rather than guess, the Guard asks a person.";
-    else if (wid.fired) ex = "The model is too unsure about this package to promise on its own.";
-    else if (rep < 0.5) ex = "The Guard ignores this courier's inflated records. Fed the raw records, the same model would promise " + hm(wi.p80) + " instead of " + hm(b.p80) + ".";
-    else if (age > 7) ex = "Old stats, but still reliable, so the promise goes out and the data team gets a heads-up.";
-    else ex = "Nothing unusual, so the promise goes out automatically.";
-    $("w-explain").innerHTML = "<p><b>In short:</b> " + esc(ex) + "</p>";
-    if (document.activeElement !== $("act-min")) $("act-min").value = Math.round(b.p80);
     curModelMs = b.ms;
-    $("ef-model").textContent = (b.ms < 0.1 ? b.ms.toFixed(3) : b.ms.toFixed(2)) + " ms";
-    $("ef-human").textContent = "starts now";
-    renderScale();
   }
 
-  function promiseTimeline(a, b) {
-    var W = 300, mx = Math.max(a.p80, b.p80) * 1.1, step = mx > 720 ? 120 : 60;
-    function X(m) { return 16 + (W - 32) * m / mx; }
-    var lanes = [[b.p80, 26, "var(--tote)", "with the Guard"], [a.p80, 60, "var(--lq)", "without"]];
-    var g = "<svg class='ptl' viewBox='0 0 300 96' role='img' aria-label='Promise length: with the Guard " + esc(hm(b.p80)) + ", without " + esc(hm(a.p80)) + "'>";
-    for (var m = 0; m <= mx; m += step) g += "<text x='" + X(m).toFixed(1) + "' y='92' text-anchor='middle' class='ptl-t'>" + (m / 60) + " h</text>";
-    g += "<line x1='16' x2='284' y1='80' y2='80' class='ptl-ax'/>";
-    lanes.forEach(function (l) {
-      g += "<rect class='ptl-road' x='16' y='" + (l[1] + 2) + "' height='6' rx='3' width='" + (X(l[0]) - 16).toFixed(1) + "' style='fill:" + l[2] + "'/>" +
-        "<use href='#i-van' class='ptl-van' width='34' height='18' x='0' y='" + (l[1] - 14) + "' data-x='" + (X(l[0]) - 34).toFixed(1) + "'/>" +
-        "<text class='ptl-l' x='" + Math.max(52, X(l[0]) - 38).toFixed(1) + "' y='" + (l[1] - 2) + "' text-anchor='end'>" + esc(l[3]) + "</text>";
-    });
-    $("w-promise").insertAdjacentHTML("beforeend", g + "</svg>");
-    var vans = $("w-promise").querySelectorAll(".ptl-van"), roads = $("w-promise").querySelectorAll(".ptl-road");
-    vans.forEach(function (v) { v.style.transform = "translate(" + (RM ? v.getAttribute("data-x") : 16) + "px,0px)"; });
-    if (RM) return;
-    roads.forEach(function (r) { r.style.transform = "scaleX(0)"; });
-    requestAnimationFrame(function () { requestAnimationFrame(function () {
-      vans.forEach(function (v) { v.classList.add("go"); v.style.transform = "translate(" + v.getAttribute("data-x") + "px,0px)"; });
-      roads.forEach(function (r) { r.classList.add("go"); r.style.transform = "scaleX(1)"; });
-    }); });
-  }
+  var curModelMs = null;
   function renderScale() {
     var on = V.final.cells.combined.on, tl = track("reference", false), h0 = V.cfg.splits.heldout[0];
     var wk = tl.week.map(function (w, i) { return [w, tl.n_test[i]]; }).filter(function (p) { return p[0] >= h0; });
@@ -854,12 +747,6 @@
     ];
     rows.forEach(function (r) { r.label = fmt(r.v, "sgn1") + " min"; });
     hbars($("ch-ctrl"), rows, { left: 180, xLabel: "extra minutes of error per package", aria: "Extra error from sloppy scans under each fix" });
-    var dose = S.dose, sv = [];
-    [false, true].forEach(function (g) {
-      var a = dose.filter(function (d) { return d.guard === g; }).sort(function (p, q) { return p.severity - q.severity; });
-      sv.push({ name: g ? "with the Guard" : "without", color: g ? "var(--tote-ink)" : "var(--lq)", dash: g, x: a.map(function (d) { return d.severity; }), y: a.map(function (d) { return d.mae; }) });
-    });
-    lineChart($("ch-dose"), sv, { yLabel: "average error (min per package)", xLabel: "share of couriers scanning sloppily", xFmt: "pct0", yFmt: "f0", tipFmt: "f1", dots: true, endLabels: true, tipX: "", margin: { r: 110 } });
   }
 
   // ------------------------------------------------------------ 3 classifier
@@ -908,13 +795,13 @@
 
   // ------------------------------------------------------------ boot
   var resizeT = null;
-  function renderCharts() { renderShelf(); renderMatrix(); renderWeekly(); renderChain(); renderControls(); renderClassifier(); }
+  function renderCharts() { renderMatrix(); renderWeekly(); renderChain(); renderControls(); renderClassifier(); }
   function fail(e) {
     document.querySelector("main").insertAdjacentHTML("afterbegin", '<div class="err">Some site data didn\'t load (' + esc(e.message) + "). Serve the docs folder over HTTP, for example <code>python -m http.server -d docs 8000</code>, then reload.</div>");
     console.error(e);
   }
   function initKeys() {
-    var map = { "0": "top", "1": "poisons", "2": "built", "3": "analysis", "4": "walk" };
+    var map = { "0": "top", "1": "poisons", "2": "built", "3": "analysis" };
     document.addEventListener("keydown", function (e) {
       if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target || {}).tagName || "")) return;
       if (e.key === "5") { window.location.href = "lab.html"; return; }
@@ -926,7 +813,7 @@
       if (id !== "top") { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
     });
   }
-  initTheme(); initNav(); initKeys(); initRoads(); initDeco();
+  initNav(); initKeys(); initRoads(); initDeco();
   // results.json (a copy of results/results.json) is the source of every result; summary.json only adds the build time
   Promise.all(["results", "timeline", "mechanism", "console", "manifest", "modlog", "text", "summary"].map(function (n) {
     return getJSON("data/" + n + ".json").catch(function (e) { if (n === "text" || n === "summary") return {}; throw e; });
@@ -941,6 +828,6 @@
     return Promise.all(["off_p50", "off_p80", "on_p50", "on_p80"].map(function (n) { return getJSON("models/" + n + ".json"); }));
   }).then(function (ms) {
     M.off_p50 = ms[0]; M.off_p80 = ms[1]; M.on_p50 = ms[2]; M.on_p80 = ms[3];
-    renderSlip(); initWalk();
+    renderSlip(); renderScale();
   }).catch(fail);
 })();

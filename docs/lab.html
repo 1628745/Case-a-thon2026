@@ -12,9 +12,6 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="lab.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='4' width='12' height='9' rx='1.5' fill='%23F2BA00'/%3E%3Crect x='2' y='4' width='12' height='3' fill='%231B2B3A'/%3E%3C/svg%3E">
-<script>
-  try { var t = localStorage.getItem("theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-</script>
 </head>
 <body class="lab">
 <a class="skip" href="#s-load">Skip to the lab</a>
@@ -29,7 +26,6 @@
     <a href="#s-results" class="lstep" data-step="results"><span class="dot" aria-hidden="true"></span><span>5 Results</span></a>
   </nav>
   <a class="ghost back" href="index.html">The story</a>
-  <button id="theme" class="ghost" type="button" aria-label="Switch between light and dark theme">Theme</button>
 </header>
 
 <main id="top">
@@ -95,7 +91,6 @@
     <button type="button" role="radio" class="preset" data-preset="sloppy" aria-checked="true" style="--c: var(--lq)"><b>Sloppy couriers 20%</b><span>A fifth of couriers increasingly mark packages delivered in one end-of-shift batch, and some records get uploaded twice.</span></button>
     <button type="button" role="radio" class="preset" data-preset="stale" aria-checked="false" style="--c: var(--stale)"><b>Stale feature store</b><span>History features stop refreshing at the start of training, and old weeks count as much as recent ones.</span></button>
     <button type="button" role="radio" class="preset" data-preset="sloppy_stale" aria-checked="false" style="--c: var(--comb)"><b>Sloppy + stale</b><span>Both at once.</span></button>
-    <button type="button" role="radio" class="preset" data-preset="unseen" aria-checked="false" style="--c: var(--unseen)"><b>Unseen: early scans 15%</b><span>A defect the Guard was not designed for: 15% of couriers scan "delivered" at 40-70% of the real time.</span></button>
   </div>
   <p class="note" id="poison-summary"></p>
 </section>
